@@ -15,6 +15,7 @@ export const navigationItems = [
   { label: 'Jobs', path: '/jobs', icon: 'briefcase-business' },
   { label: 'Applications', path: '/applications', icon: 'kanban' },
   { label: 'Application package', path: '/application-package', icon: 'package-check' },
+  { label: 'Interview prep', path: '/interview-preparation', icon: 'message-circle-question' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ] as const;
 
@@ -172,3 +173,30 @@ export const applicationPackageSchema = z.object({
 });
 export type ApplicationPackageRequest = z.infer<typeof applicationPackageRequestSchema>;
 export type ApplicationPackage = z.infer<typeof applicationPackageSchema>;
+
+export const interviewStageSchema = z.enum(['Recruiter Screen', 'Technical Interview', 'Behavioral Interview', 'System Design', 'Onsite', 'Final Interview']);
+export const interviewAnswerSchema = z.object({ questionId: z.string().min(1), answer: z.string().max(5000) });
+export const interviewPreparationRequestSchema = z.object({
+  stage: interviewStageSchema.default('Technical Interview'),
+  scheduledAt: dateSchema.nullable().default(null),
+  notes: z.string().trim().max(5000).default(''),
+});
+export const interviewPreparationUpdateSchema = interviewPreparationRequestSchema.partial().extend({ answers: z.array(interviewAnswerSchema).max(50).optional() });
+export const interviewPreparationSchema = z.object({
+  materialType: z.literal('preparation_material'),
+  disclaimer: z.string().min(1),
+  technicalTopics: z.array(z.string()),
+  likelyTopicCategories: z.array(z.string()),
+  resumeQuestions: z.array(z.object({ id: z.string(), question: z.string(), sourceFactIds: z.array(z.string()) })),
+  behavioralQuestions: z.array(z.object({ id: z.string(), question: z.string(), sourceFactIds: z.array(z.string()) })),
+  roleSpecificQuestions: z.array(z.object({ id: z.string(), question: z.string(), sourceFactIds: z.array(z.string()) })),
+  checklist: z.array(z.string()),
+});
+export const interviewPreparationResponseSchema = z.object({
+  id: z.string(), applicationId: z.string(), stage: interviewStageSchema, scheduledAt: dateSchema.nullable(), notes: z.string(), answers: z.array(interviewAnswerSchema), preparation: interviewPreparationSchema, createdAt: dateSchema, updatedAt: dateSchema,
+});
+export type InterviewStage = z.infer<typeof interviewStageSchema>;
+export type InterviewPreparationRequest = z.infer<typeof interviewPreparationRequestSchema>;
+export type InterviewPreparationUpdate = z.infer<typeof interviewPreparationUpdateSchema>;
+export type InterviewPreparation = z.infer<typeof interviewPreparationSchema>;
+export type InterviewPreparationResponse = z.infer<typeof interviewPreparationResponseSchema>;

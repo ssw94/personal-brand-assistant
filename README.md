@@ -34,6 +34,8 @@ AI Resume Optimization defaults to the credential-free `safe-mock` provider (`AI
 
 The Application Package workspace generates a concise cover letter, skill match/gap review, interview prompts, and an application checklist from a selected resume and real job description. Generated letters are saved as editable drafts; the selected resume remains unchanged. The provider contract lives in `apps/api/src/aiCoverLetterProvider.ts`. The default provider only derives statements from supplied profile/resume facts and labels gaps as items to review, never as qualifications.
 
+Interview Preparation is available for tracked applications. It generates technical topics, topic categories, resume-based prompts, behavioral prompts, role-specific prompts, and a checklist from the selected job and available resume facts. Every generated item is labeled preparation material rather than a guaranteed interview question. Interview stage, date, notes, and user-authored answers are persisted independently from generated content.
+
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
 ## Vercel deployment

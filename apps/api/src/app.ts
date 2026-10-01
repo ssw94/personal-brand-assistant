@@ -3,7 +3,7 @@ import express, { type ErrorRequestHandler } from 'express';
 import { healthResponseSchema } from '@pba/shared';
 import { profileErrorStatus, profileRouter } from './profileRoutes.js';
 import { resumeErrorStatus, resumeRouter } from './resumeRoutes.js';
-import { applicationErrorStatus, applicationRouter } from './applicationRoutes.js';
+import { applicationErrorStatus, applicationRouter, interviewPreparationErrorStatus } from './applicationRoutes.js';
 import { jobErrorStatus, jobRouter } from './jobRoutes.js';
 import { applicationPackageErrorStatus, applicationPackageRouter } from './applicationPackageRoutes.js';
 
@@ -33,8 +33,9 @@ export function createApp() {
     const resumeStatus = resumeErrorStatus(error);
     const jobStatus = jobErrorStatus(error);
     const applicationStatus = applicationErrorStatus(error);
+    const interviewStatus = interviewPreparationErrorStatus(error);
     const packageStatus = applicationPackageErrorStatus(error);
-    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, packageStatus].find(candidate => candidate !== 500) ?? 500;
+    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, interviewStatus, packageStatus].find(candidate => candidate !== 500) ?? 500;
     if (status >= 500) console.error(error);
     response.status(status).json({ error: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Invalid request' });
   };
