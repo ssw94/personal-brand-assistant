@@ -18,3 +18,69 @@ export const navigationItems = [
 ] as const;
 
 export type NavigationItem = (typeof navigationItems)[number];
+
+export const remotePreferenceSchema = z.enum(['onsite', 'hybrid', 'remote', 'flexible']);
+export const dateSchema = z.string().datetime({ offset: true });
+
+const optionalText = (max: number) => z.string().trim().max(max).default('');
+
+export const profileDetailsSchema = z.object({
+  firstName: z.string().trim().min(1, 'First name is required').max(80),
+  lastName: optionalText(80),
+  professionalTitle: z.string().trim().min(1, 'Professional title is required').max(120),
+  location: optionalText(120),
+  phone: optionalText(40),
+  website: z.union([z.string().trim().url('Enter a valid URL'), z.literal('')]).default(''),
+  summary: optionalText(2000),
+  yearsOfExperience: z.number().int().min(0).max(80),
+  targetRoles: z.array(z.string().trim().min(1).max(120)).max(20),
+  preferredLocations: z.array(z.string().trim().min(1).max(120)).max(20),
+  remotePreference: remotePreferenceSchema,
+});
+
+export const experienceSchema = z.object({
+  company: z.string().trim().min(1, 'Company is required').max(160),
+  title: z.string().trim().min(1, 'Title is required').max(160),
+  startDate: dateSchema,
+  endDate: dateSchema.nullable().default(null),
+  description: optionalText(3000),
+});
+
+export const educationSchema = z.object({
+  institution: z.string().trim().min(1, 'Institution is required').max(200),
+  degree: z.string().trim().min(1, 'Degree is required').max(160),
+  field: optionalText(160),
+  startDate: dateSchema,
+  endDate: dateSchema.nullable().default(null),
+});
+
+export const projectSchema = z.object({
+  name: z.string().trim().min(1, 'Project name is required').max(160),
+  description: optionalText(3000),
+  url: z.union([z.string().trim().url('Enter a valid URL'), z.literal('')]).default(''),
+});
+
+export const skillSchema = z.object({
+  name: z.string().trim().min(1, 'Skill is required').max(120),
+  level: optionalText(40),
+  technology: z.boolean().default(false),
+});
+
+export const certificationSchema = z.object({
+  name: z.string().trim().min(1, 'Certification name is required').max(200),
+  issuer: optionalText(200),
+  issuedAt: dateSchema.nullable().default(null),
+});
+
+export const achievementSchema = z.object({
+  title: z.string().trim().min(1, 'Achievement is required').max(200),
+  description: optionalText(2000),
+});
+
+export type ProfileDetails = z.infer<typeof profileDetailsSchema>;
+export type ExperienceInput = z.infer<typeof experienceSchema>;
+export type EducationInput = z.infer<typeof educationSchema>;
+export type ProjectInput = z.infer<typeof projectSchema>;
+export type SkillInput = z.infer<typeof skillSchema>;
+export type CertificationInput = z.infer<typeof certificationSchema>;
+export type AchievementInput = z.infer<typeof achievementSchema>;

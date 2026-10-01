@@ -26,6 +26,8 @@ npm run dev
 
 The web app runs at `http://localhost:5173` and the API at `http://localhost:4000`.
 
+For profile persistence, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. These values identify the real user record to use locally; the app does not seed fictional users or profile data.
+
 To run checks:
 
 ```bash
