@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: personal_brand_assistant
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - pba-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d personal_brand_assistant']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pba-postgres:

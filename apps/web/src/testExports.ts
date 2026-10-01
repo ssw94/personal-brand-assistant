@@ -1,0 +1,1 @@
+export const pageCopy = { Profile: ['Your professional profile', 'Keep your experience, skills, projects and goals in one place.'], Jobs: ['Job search', 'Collect and evaluate opportunities that match the direction you want to take.'] } as const;

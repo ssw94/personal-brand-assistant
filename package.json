@@ -1,0 +1,28 @@
+{
+  "name": "personal-brand-assistant",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "packageManager": "npm@11.9.0",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @pba/api\" \"npm run dev --workspace @pba/web\"",
+    "build": "npm run build --workspace @pba/shared && npm run build --workspace @pba/api && npm run build --workspace @pba/web",
+    "typecheck": "npm run build --workspace @pba/shared && npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run build --workspace @pba/shared && npm run test --workspaces --if-present",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "db:generate": "npm run prisma:generate --workspace @pba/api",
+    "db:migrate": "npm run prisma:migrate --workspace @pba/api"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "concurrently": "^9.1.2",
+    "@eslint/js": "^9.22.0",
+    "eslint": "^9.22.0",
+    "typescript-eslint": "^8.26.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  }
+}
