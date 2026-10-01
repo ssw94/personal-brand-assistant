@@ -10,6 +10,9 @@ datasource db {
 model User {
   id            String          @id @default(cuid())
   email         String          @unique
+  passwordHash   String          @default("")
+  plan           String          @default("FREE")
+  onboardingCompleted Boolean    @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   profile       Profile?

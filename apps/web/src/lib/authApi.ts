@@ -1,0 +1,8 @@
+import { getApiBaseUrl } from './config';
+import { authHeaders, getToken, saveSession, type SessionUser } from './session';
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> { const response = await fetch(`${getApiBaseUrl()}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers } }); if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.error ?? 'The request could not be completed.'); } return response.json() as Promise<T>; }
+export type AuthResponse = { token: string; user: SessionUser };
+export async function signup(body: { email: string; password: string; acceptTerms: true; plan: string }) { const result = await request<AuthResponse>('/auth/signup', { method: 'POST', body: JSON.stringify(body) }); saveSession(result); return result; }
+export async function signin(body: { email: string; password: string }) { const result = await request<AuthResponse>('/auth/signin', { method: 'POST', body: JSON.stringify(body) }); saveSession(result); return result; }
+export const forgotPassword = (email: string) => request<{ message: string }>('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+export async function completeOnboarding() { const response = await fetch(`${getApiBaseUrl()}/auth/onboarding-complete`, { method: 'POST', headers: authHeaders() }); if (!response.ok) throw new Error('Could not complete onboarding.'); const result = await response.json() as { user: SessionUser }; const token = getToken(); if (token) saveSession({ token, user: result.user }); return result; }

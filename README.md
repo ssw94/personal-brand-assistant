@@ -28,7 +28,7 @@ The web app runs at `http://localhost:5173` and the API at `http://localhost:400
 
 The public product experience is available at `http://localhost:5173/`, with centralized plan information at `/pricing`. The existing authenticated workspace dashboard is at `/dashboard`; authentication and onboarding are intentionally separate flows and are not represented by frontend-only identity claims.
 
-For profile persistence, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. These values identify the real user record to use locally; the app does not seed fictional users or profile data.
+For local development without the account flow, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. The public sign-up/sign-in flow uses the API’s signed JWT session instead. Set `AUTH_JWT_SECRET` to a random value of at least 32 characters before using account authentication; never put it in a `VITE_*` variable.
 
 Local development accepts these identity headers only when `NODE_ENV` is not `production`. Production API requests must use a signed HS256 Bearer JWT with `sub` set to the user ID and an optional `email` claim. Set a strong `AUTH_JWT_SECRET` (and optionally `AUTH_JWT_ISSUER`) on the API host; never put it in a `VITE_*` variable. The frontend currently has no bundled authentication provider, so connect it to your organization’s OIDC/session layer before exposing it to users. Set `AUTH_ALLOW_IDENTITY_HEADERS=false` explicitly in all deployed environments.
 
@@ -85,4 +85,4 @@ npm run db:migrate
 npm run dev
 ```
 
-The initial milestone includes the application shell, navigation, health endpoint, database foundation, shared contracts, and honest empty states. It intentionally does not create AI output or placeholder user/job data.
+The initial milestone includes the application shell, navigation, health endpoint, database foundation, shared contracts, and honest empty states. The public landing, pricing, account authentication and onboarding flows do not seed fictional user/job data.
