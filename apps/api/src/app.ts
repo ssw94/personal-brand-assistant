@@ -13,7 +13,8 @@ export function getHealthResponse() {
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
-  app.use(cors({ origin: process.env.WEB_ORIGIN ?? 'http://localhost:5173' }));
+  const allowedOrigins = (process.env.WEB_ORIGINS ?? process.env.WEB_ORIGIN ?? 'http://localhost:5173').split(',').map(origin => origin.trim()).filter(Boolean);
+  app.use(cors({ origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin)) callback(null, true); else callback(new Error('Origin is not allowed by the API CORS policy.')); } }));
   app.use(express.json({ limit: '1mb' }));
 
   app.get('/api/health', (_request, response) => {

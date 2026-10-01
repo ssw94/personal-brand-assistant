@@ -1,9 +1,8 @@
 import { healthResponseSchema, type HealthResponse } from '@pba/shared';
-
-const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api';
+import { getApiBaseUrl } from './config';
 
 export async function getHealth(): Promise<HealthResponse> {
-  const response = await fetch(`${apiUrl}/health`);
+  const response = await fetch(`${getApiBaseUrl()}/health`);
   if (!response.ok) throw new Error('The API is unavailable right now.');
   return healthResponseSchema.parse(await response.json());
 }

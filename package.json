@@ -4,6 +4,7 @@
   "type": "module",
   "version": "0.1.0",
   "packageManager": "npm@11.9.0",
+  "engines": { "node": ">=22.15.0 <23" },
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace @pba/api\" \"npm run dev --workspace @pba/web\"",

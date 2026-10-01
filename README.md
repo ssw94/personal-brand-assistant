@@ -34,6 +34,19 @@ AI Resume Optimization defaults to the credential-free `safe-mock` provider (`AI
 
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
+## Vercel deployment
+
+Use Vercel’s GitHub integration for deployments; no Vercel token is required in GitHub Actions.
+
+1. Connect the GitHub repository to Vercel and create a new project.
+2. Set the Vercel project **Root Directory** to `apps/web`.
+3. Keep the detected framework as **Vite**. The checked-in `apps/web/vercel.json` runs the workspace build from the repository root, outputs `dist`, and rewrites all SPA routes to `index.html`.
+4. Set `VITE_API_URL` in Vercel Environment Variables to the deployed backend API base URL, including `/api` (for example, `https://api.your-domain.com/api`). Do not put database URLs, provider keys, or other backend secrets in `VITE_*` variables.
+5. Set `VITE_USER_ID` and `VITE_USER_EMAIL` only if the current identity-header development flow is being used; replace that flow with authenticated identity before exposing the app broadly.
+6. Set the Vercel **Production Branch** to `main`. GitHub integration will create production deployments from `main` and preview deployments for pull requests and other branches.
+7. Configure the API’s `WEB_ORIGINS` environment variable with the production Vercel URL and any preview URLs that should be allowed, comma-separated. For example: `https://your-app.vercel.app,https://your-preview-domain.vercel.app`.
+8. Configure the backend’s database and AI/provider variables on the backend host only. Vercel only needs the public `VITE_API_URL` and other explicitly client-safe values.
+
 To run checks:
 
 ```bash
