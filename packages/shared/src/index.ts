@@ -84,3 +84,25 @@ export type ProjectInput = z.infer<typeof projectSchema>;
 export type SkillInput = z.infer<typeof skillSchema>;
 export type CertificationInput = z.infer<typeof certificationSchema>;
 export type AchievementInput = z.infer<typeof achievementSchema>;
+
+export const resumeSectionIds = ['summary', 'experience', 'education', 'skills', 'projects', 'certifications', 'achievements'] as const;
+export const resumeSectionSchema = z.enum(resumeSectionIds);
+export type ResumeSectionId = (typeof resumeSectionIds)[number];
+
+export const resumeDocumentSchema = z.object({
+  summary: z.string().trim().max(3000).default(''),
+  sectionOrder: z.array(resumeSectionSchema).length(resumeSectionIds.length),
+  visibleSections: z.record(resumeSectionSchema, z.boolean()),
+  experienceIds: z.array(z.string().trim()),
+  educationIds: z.array(z.string().trim()),
+  skillIds: z.array(z.string().trim()),
+  projectIds: z.array(z.string().trim()),
+  certificationIds: z.array(z.string().trim()),
+  achievementIds: z.array(z.string().trim()),
+});
+
+export const resumeCreateSchema = z.object({ title: z.string().trim().min(1, 'Resume name is required').max(120) });
+export const resumeSaveSchema = z.object({ title: z.string().trim().min(1, 'Resume name is required').max(120), content: resumeDocumentSchema });
+export type ResumeDocument = z.infer<typeof resumeDocumentSchema>;
+export type ResumeCreateInput = z.infer<typeof resumeCreateSchema>;
+export type ResumeSaveInput = z.infer<typeof resumeSaveSchema>;

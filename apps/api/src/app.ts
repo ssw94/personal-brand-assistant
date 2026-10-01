@@ -2,6 +2,7 @@ import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import { healthResponseSchema } from '@pba/shared';
 import { profileErrorStatus, profileRouter } from './profileRoutes.js';
+import { resumeErrorStatus, resumeRouter } from './resumeRoutes.js';
 
 export function getHealthResponse() {
   return healthResponseSchema.parse({ status: 'ok', service: 'personal-brand-assistant-api', timestamp: new Date().toISOString() });
@@ -17,10 +18,12 @@ export function createApp() {
     response.json(getHealthResponse());
   });
   app.use('/api/profile', profileRouter);
+  app.use('/api/resumes', resumeRouter);
 
   app.use((_request, response) => response.status(404).json({ error: 'Not found' }));
   const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
-    const status = profileErrorStatus(error);
+    const profileStatus = profileErrorStatus(error);
+    const status = profileStatus === 500 ? resumeErrorStatus(error) : profileStatus;
     if (status >= 500) console.error(error);
     response.status(status).json({ error: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Invalid request' });
   };

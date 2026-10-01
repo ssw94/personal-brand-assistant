@@ -28,6 +28,8 @@ The web app runs at `http://localhost:5173` and the API at `http://localhost:400
 
 For profile persistence, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. These values identify the real user record to use locally; the app does not seed fictional users or profile data.
 
+The Resume Builder uses the profile as its source of truth. Resume documents store only selected profile IDs, section visibility/order, and resume-specific summary text. Draft edits autosave to the current version; “Save version” creates an immutable numbered version. PDF export can be added later without changing this model.
+
 To run checks:
 
 ```bash
