@@ -40,6 +40,8 @@ Interview Preparation is available for tracked applications. It generates techni
 
 The AI Career Assistant is available from the Career Assistant workspace. It answers questions using the current user’s saved profile, jobs, applications, resumes, and interview preparation. Important answers include expandable evidence showing the underlying records; when a recommendation cannot be confirmed from stored data, the assistant says so. Questions and answers are persisted in `AIConversation` history.
 
+Content Studio is available from the Content Studio workspace. It stores a content strategy, idea backlog, editable drafts, revisions, critique results, and review/approval state. The default `safe-mock` content provider only uses facts already present in the profile and marks critique as critique-only material. Drafts must be reviewed and approved before future scheduling or publishing integrations can act on them.
+
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
 ## Vercel deployment

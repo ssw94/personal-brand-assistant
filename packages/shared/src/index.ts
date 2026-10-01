@@ -17,6 +17,7 @@ export const navigationItems = [
   { label: 'Application package', path: '/application-package', icon: 'package-check' },
   { label: 'Interview prep', path: '/interview-preparation', icon: 'message-circle-question' },
   { label: 'Career assistant', path: '/career-assistant', icon: 'bot' },
+  { label: 'Content studio', path: '/content-studio', icon: 'pen-line' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ] as const;
 
@@ -212,3 +213,20 @@ export type AssistantAnswer = z.infer<typeof assistantAnswerSchema>;
 export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type AssistantAsk = z.infer<typeof assistantAskSchema>;
 export type AssistantConversation = z.infer<typeof assistantConversationSchema>;
+
+export const contentStatusSchema = z.enum(['DRAFT', 'REVIEW', 'APPROVED', 'SCHEDULED', 'PUBLISHING', 'PUBLISHED', 'PUBLISH_FAILED']);
+export const contentIdeaStatusSchema = z.enum(['BACKLOG', 'PLANNED', 'USED']);
+export const contentStrategySchema = z.object({ targetAudience: z.string().trim().max(500), writingVoice: z.string().trim().max(500), postingFrequency: z.string().trim().max(120), recurringThemes: z.array(z.string().trim().min(1).max(120)).max(20) });
+export const contentPillarSchema = z.object({ name: z.string().trim().min(1).max(120), description: z.string().trim().max(500).default('') });
+export const contentIdeaSchema = z.object({ title: z.string().trim().min(1).max(180), prompt: z.string().trim().min(10).max(1000), pillarId: z.string().trim().nullable().default(null), status: contentIdeaStatusSchema.default('BACKLOG') });
+export const contentDraftCreateSchema = z.object({ title: z.string().trim().min(1).max(180), topic: z.string().trim().min(1).max(300), body: z.string().trim().max(3000).default(''), sourceIdeaId: z.string().trim().nullable().default(null) });
+export const contentDraftUpdateSchema = contentDraftCreateSchema.partial().extend({ body: z.string().trim().min(1).max(3000).optional(), status: contentStatusSchema.optional() });
+export const contentGenerationRequestSchema = z.object({ topic: z.string().trim().min(10).max(500), title: z.string().trim().min(1).max(180).default('LinkedIn draft'), sourceIdeaId: z.string().trim().nullable().default(null) });
+export const contentTransformSchema = z.object({ action: z.enum(['rewrite', 'improve_hook', 'shorten', 'expand', 'regenerate']) });
+export const contentCritiqueSchema = z.object({ provider: z.string(), summary: z.string(), strengths: z.array(z.string()), improvements: z.array(z.string()), factStatus: z.literal('critique_only') });
+export const contentDraftSchema = z.object({ id: z.string(), title: z.string(), topic: z.string(), body: z.string(), status: contentStatusSchema, sourceFactIds: z.array(z.string()), sourceIdeaId: z.string().nullable(), failureReason: z.string().nullable(), reviewedAt: dateSchema.nullable(), approvedAt: dateSchema.nullable(), scheduledAt: dateSchema.nullable(), publishedAt: dateSchema.nullable(), createdAt: dateSchema, updatedAt: dateSchema, revisions: z.array(z.object({ id: z.string(), version: z.number(), body: z.string(), changeType: z.string(), createdAt: dateSchema })), critiques: z.array(contentCritiqueSchema) });
+export type ContentStatus = z.infer<typeof contentStatusSchema>;
+export type ContentStrategy = z.infer<typeof contentStrategySchema>;
+export type ContentIdeaInput = z.infer<typeof contentIdeaSchema>;
+export type ContentDraft = z.infer<typeof contentDraftSchema>;
+export type ContentCritique = z.infer<typeof contentCritiqueSchema>;

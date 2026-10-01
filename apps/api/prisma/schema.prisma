@@ -18,6 +18,10 @@ model User {
   applications  Application[]
   conversations AIConversation[]
   coverLetters   CoverLetter[]
+  contentStrategy ContentStrategy?
+  contentPillars  ContentPillar[]
+  contentIdeas    ContentIdea[]
+  contentDrafts   ContentDraft[]
 }
 
 model Profile {
@@ -264,4 +268,90 @@ model AIConversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([userId, updatedAt])
+}
+
+model ContentStrategy {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetAudience   String   @default("")
+  writingVoice     String   @default("")
+  postingFrequency String   @default("")
+  recurringThemes  String[] @default([])
+  updatedAt        DateTime @updatedAt
+}
+
+model ContentPillar {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  ideas       ContentIdea[]
+  @@index([userId, updatedAt])
+}
+
+model ContentIdea {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pillarId  String?
+  pillar    ContentPillar? @relation(fields: [pillarId], references: [id], onDelete: SetNull)
+  title     String
+  prompt    String
+  status    String        @default("BACKLOG")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  drafts    ContentDraft[]
+  @@index([userId, status, updatedAt])
+  @@index([pillarId])
+}
+
+model ContentDraft {
+  id             String             @id @default(cuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceIdeaId   String?
+  sourceIdea     ContentIdea?       @relation(fields: [sourceIdeaId], references: [id], onDelete: SetNull)
+  title          String
+  topic          String
+  body           String
+  status         String             @default("DRAFT")
+  sourceFactIds  String[]           @default([])
+  failureReason  String?
+  reviewedAt     DateTime?
+  approvedAt     DateTime?
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  revisions      ContentRevision[]
+  critiques      ContentCritique[]
+  @@index([userId, status, updatedAt])
+  @@index([userId, scheduledAt])
+  @@index([sourceIdeaId])
+}
+
+model ContentRevision {
+  id        String       @id @default(cuid())
+  draftId   String
+  draft     ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  version   Int
+  body      String
+  changeType String
+  createdAt DateTime     @default(now())
+  @@unique([draftId, version])
+  @@index([draftId, createdAt])
+}
+
+model ContentCritique {
+  id         String       @id @default(cuid())
+  draftId    String
+  draft      ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  provider   String
+  result     Json
+  createdAt  DateTime     @default(now())
+  @@index([draftId, createdAt])
 }

@@ -1,0 +1,12 @@
+import { Router, type Request } from 'express';
+import { z } from 'zod';
+import { authenticateRequest } from './auth.js';
+import { contentErrorStatus, createDraft, createIdea, createPillar, critiqueDraft, deletePillar, generateDraft, getDraft, getStrategy, listDrafts, listIdeas, listPillars, saveStrategy, transformDraft, updateDraft } from './contentService.js';
+export const contentRouter = Router();
+const user = (req: Request) => authenticateRequest(req).userId; const id = (req: Request) => z.string().min(1).parse(req.params.id);
+contentRouter.get('/strategy', async (req, res) => res.json({ strategy: await getStrategy(user(req)) })); contentRouter.put('/strategy', async (req, res) => res.json({ strategy: await saveStrategy(user(req), req.body) }));
+contentRouter.get('/pillars', async (req, res) => res.json({ pillars: await listPillars(user(req)) })); contentRouter.post('/pillars', async (req, res) => res.status(201).json(await createPillar(user(req), req.body))); contentRouter.delete('/pillars/:id', async (req, res) => { await deletePillar(user(req), id(req)); res.status(204).send(); });
+contentRouter.get('/ideas', async (req, res) => res.json({ ideas: await listIdeas(user(req)) })); contentRouter.post('/ideas', async (req, res) => res.status(201).json(await createIdea(user(req), req.body)));
+contentRouter.get('/drafts', async (req, res) => res.json({ drafts: await listDrafts(user(req)) })); contentRouter.post('/drafts', async (req, res) => res.status(201).json(await createDraft(user(req), req.body))); contentRouter.post('/drafts/generate', async (req, res) => res.status(201).json(await generateDraft(user(req), req.body)));
+contentRouter.get('/drafts/:id', async (req, res) => res.json({ draft: await getDraft(user(req), id(req)) })); contentRouter.patch('/drafts/:id', async (req, res) => res.json({ draft: await updateDraft(user(req), id(req), req.body) })); contentRouter.post('/drafts/:id/transform', async (req, res) => res.json({ draft: await transformDraft(user(req), id(req), req.body) })); contentRouter.post('/drafts/:id/critique', async (req, res) => res.json({ critique: await critiqueDraft(user(req), id(req)) }));
+export { contentErrorStatus };
