@@ -28,6 +28,19 @@ The web app runs at `http://localhost:5173` and the API at `http://localhost:400
 
 The public product experience is available at `http://localhost:5173/`, with centralized plan information at `/pricing`. The existing authenticated workspace dashboard is at `/dashboard`; authentication and onboarding are intentionally separate flows and are not represented by frontend-only identity claims.
 
+## Development database and seed
+
+From the repository root, copy `.env.example` to the API environment file and configure a development-only `DATABASE_URL`. Apply schema changes and seed the supplied resume data with:
+
+```bash
+npm run db:setup
+# or separately:
+npm run db:migrate
+npm run db:seed
+```
+
+The seed is based on Sachin Waghmare’s supplied resume and is idempotent. It finds the user by `SEED_USER_EMAIL` (defaulting to `waghmare.sachin1994@gmail.com`), creates missing profile records, and does not update existing profile, resume, strategy or pillar records. It does not create a password or any credentials; set `SEED_USER_EMAIL` only when targeting an explicitly approved development/staging database. Never point it at production. To reset local data, use a disposable local database or `prisma migrate reset` only after verifying the `DATABASE_URL`; that command deletes all data in the selected database.
+
 For local development without the account flow, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. The public sign-up/sign-in flow uses the API’s signed JWT session instead. Set `AUTH_JWT_SECRET` to a random value of at least 32 characters before using account authentication; never put it in a `VITE_*` variable.
 
 Local development accepts these identity headers only when `NODE_ENV` is not `production`. Production API requests must use a signed HS256 Bearer JWT with `sub` set to the user ID and an optional `email` claim. Set a strong `AUTH_JWT_SECRET` (and optionally `AUTH_JWT_ISSUER`) on the API host; never put it in a `VITE_*` variable. The frontend currently has no bundled authentication provider, so connect it to your organization’s OIDC/session layer before exposing it to users. Set `AUTH_ALLOW_IDENTITY_HEADERS=false` explicitly in all deployed environments.
