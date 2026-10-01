@@ -23,6 +23,15 @@ export const navigationItems = [
 
 export type NavigationItem = (typeof navigationItems)[number];
 
+export const planCatalog = [
+  { id: 'FREE', name: 'Free', price: 0, period: 'forever', description: 'A focused starting point for building your professional foundation.', features: ['Professional profile', 'One resume', 'Manual job and application tracking', 'Limited AI preparation'], aiUsage: 'Limited', publishing: 'Not included', scheduling: 'Not included', team: false },
+  { id: 'CREATOR', name: 'Creator', price: 19, period: 'month', description: 'For professionals building a consistent, thoughtful presence.', features: ['Everything in Free', 'Content ideas and drafts', 'Content strategy and critique', 'Content calendar'], aiUsage: 'More AI usage', publishing: 'Not included', scheduling: 'Included', team: false },
+  { id: 'PRO', name: 'Pro', price: 39, period: 'month', description: 'For an active personal brand and career workflow.', features: ['Everything in Creator', 'Advanced resume and job workflows', 'Interview preparation', 'Publishing integrations when connected'], aiUsage: 'Expanded', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
+  { id: 'EXPERT', name: 'Expert', price: 79, period: 'month', description: 'For professionals who want the most room to work with AI.', features: ['Everything in Pro', 'Highest individual usage allowance', 'Priority workflow features'], aiUsage: 'Highest individual allowance', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
+  { id: 'TEAM', name: 'Team', price: 149, period: 'month', description: 'For small teams supporting professional content workflows.', features: ['Everything in Pro', 'Shared workspace controls', 'Team-oriented access'], aiUsage: 'Team allowance', publishing: 'Provider-dependent', scheduling: 'Included', team: true },
+] as const;
+export type PlanId = (typeof planCatalog)[number]['id'];
+
 export const remotePreferenceSchema = z.enum(['onsite', 'hybrid', 'remote', 'flexible']);
 export const dateSchema = z.string().datetime({ offset: true });
 

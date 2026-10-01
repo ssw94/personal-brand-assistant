@@ -26,6 +26,8 @@ npm run dev
 
 The web app runs at `http://localhost:5173` and the API at `http://localhost:4000`.
 
+The public product experience is available at `http://localhost:5173/`, with centralized plan information at `/pricing`. The existing authenticated workspace dashboard is at `/dashboard`; authentication and onboarding are intentionally separate flows and are not represented by frontend-only identity claims.
+
 For profile persistence, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. These values identify the real user record to use locally; the app does not seed fictional users or profile data.
 
 Local development accepts these identity headers only when `NODE_ENV` is not `production`. Production API requests must use a signed HS256 Bearer JWT with `sub` set to the user ID and an optional `email` claim. Set a strong `AUTH_JWT_SECRET` (and optionally `AUTH_JWT_ISSUER`) on the API host; never put it in a `VITE_*` variable. The frontend currently has no bundled authentication provider, so connect it to your organization’s OIDC/session layer before exposing it to users. Set `AUTH_ALLOW_IDENTITY_HEADERS=false` explicitly in all deployed environments.
