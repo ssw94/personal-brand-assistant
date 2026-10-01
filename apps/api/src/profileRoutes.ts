@@ -1,11 +1,13 @@
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { createAchievement, createCertification, createEducation, createExperience, createProject, createSkill, deleteEducation, deleteExperience, deleteProject, deleteSkill, getProfile, ProfileNotFoundError, updateEducation, updateExperience, updateProject, updateSkill, upsertProfile } from './profileService.js';
+import { authenticateRequest } from './auth.js';
 export const profileRouter = Router();
-function user(request: Request) { const value = request.header('x-user-id')?.trim(); if (!value) { const error = new Error('x-user-id header is required'); error.name = 'MissingUserError'; throw error; } return value; }
+function identity(request: Request) { return authenticateRequest(request); }
+function user(request: Request) { return identity(request).userId; }
 const itemId = (request: Request) => z.string().trim().min(1).parse(request.params.id);
 profileRouter.get('/', async (req, res) => res.json({ profile: await getProfile(user(req)) }));
-profileRouter.put('/', async (req, res) => res.json({ profile: await upsertProfile(user(req), req.body, req.header('x-user-email')?.trim()) }));
+profileRouter.put('/', async (req, res) => { const auth = identity(req); return res.json({ profile: await upsertProfile(auth.userId, req.body, auth.email) }); });
 type Operation = (userId: string, body: unknown) => Promise<unknown>;
 type DeleteOperation = (userId: string, id: string) => Promise<void>;
 const crud = (path: string, create: Operation, update: (userId: string, id: string, body: unknown) => Promise<unknown>, remove: DeleteOperation) => { profileRouter.post(path, async (req, res) => res.status(201).json(await create(user(req), req.body))); profileRouter.put(`${path}/:id`, async (req, res) => res.json(await update(user(req), itemId(req), req.body))); profileRouter.delete(`${path}/:id`, async (req, res) => { await remove(user(req), itemId(req)); res.status(204).send(); }); };

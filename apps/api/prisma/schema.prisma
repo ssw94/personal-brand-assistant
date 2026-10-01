@@ -52,6 +52,7 @@ model Experience {
   startDate   DateTime
   endDate     DateTime?
   description String?
+  @@index([profileId, startDate])
 }
 
 model Education {
@@ -63,6 +64,7 @@ model Education {
   field       String?
   startDate   DateTime
   endDate     DateTime?
+  @@index([profileId, startDate])
 }
 
 model Skill {
@@ -72,6 +74,7 @@ model Skill {
   name       String
   level      String?
   technology Boolean @default(false)
+  @@index([profileId, name])
 }
 
 model Project {
@@ -81,6 +84,7 @@ model Project {
   name        String
   description String?
   url         String?
+  @@index([profileId])
 }
 
 model Certification {
@@ -90,6 +94,7 @@ model Certification {
   name      String
   issuer    String?
   issuedAt  DateTime?
+  @@index([profileId, issuedAt])
 }
 
 model Achievement {
@@ -98,6 +103,7 @@ model Achievement {
   profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   title       String
   description String?
+  @@index([profileId])
 }
 
 model Resume {
@@ -109,6 +115,7 @@ model Resume {
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
   optimizations ResumeOptimization[]
+  @@index([userId, updatedAt])
 }
 
 model ResumeVersion {
@@ -120,6 +127,7 @@ model ResumeVersion {
   createdAt DateTime @default(now())
   applications Application[]
   @@unique([resumeId, version])
+  @@index([resumeId, createdAt])
 }
 
 model ResumeOptimization {
@@ -131,6 +139,7 @@ model ResumeOptimization {
   suggestions    Json
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  @@index([resumeId, updatedAt])
 }
 
 model Job {
@@ -155,6 +164,8 @@ model Job {
   updatedAt    DateTime      @updatedAt
   savedJob     SavedJob?
   applications Application[]
+  @@index([userId, updatedAt])
+  @@index([userId, title])
 }
 
 model SavedJob {
@@ -164,6 +175,7 @@ model SavedJob {
   savedAt DateTime @default(now())
   notes   String?
   priority String @default("medium")
+  @@index([priority, savedAt])
 }
 
 model Application {
@@ -184,6 +196,10 @@ model Application {
   interviews   Interview[]
   followUps    FollowUp[]
   statusHistory ApplicationStatusHistory[]
+  @@index([userId, updatedAt])
+  @@index([userId, status])
+  @@index([userId, followUpDate])
+  @@index([jobId])
 }
 
 model ApplicationStatusHistory {
@@ -193,6 +209,7 @@ model ApplicationStatusHistory {
   fromStatus    String?
   toStatus      String
   changedAt     DateTime    @default(now())
+  @@index([applicationId, changedAt])
 }
 
 model CoverLetter {
@@ -210,6 +227,8 @@ model CoverLetter {
   sourceFactIds  String[]     @default([])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+  @@index([userId, updatedAt])
+  @@index([applicationId, createdAt])
 }
 
 model Interview {
@@ -223,6 +242,7 @@ model Interview {
   answers       Json?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  @@index([applicationId, updatedAt])
 }
 
 model FollowUp {
@@ -232,6 +252,7 @@ model FollowUp {
   dueAt         DateTime
   completedAt   DateTime?
   note          String
+  @@index([applicationId, dueAt])
 }
 
 model AIConversation {
@@ -242,4 +263,5 @@ model AIConversation {
   messages  Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([userId, updatedAt])
 }

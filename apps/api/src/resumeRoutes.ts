@@ -2,9 +2,10 @@ import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { deleteResume, autosaveResume, createResume, duplicateResume, getResume, listResumes, ResumeNotFoundError, saveResumeVersion } from './resumeService.js';
 import { applyOptimization, createOptimization, getOptimization, OptimizationNotFoundError, regenerateOptimization, SuggestionNotFoundError, updateSuggestion } from './resumeOptimizationService.js';
+import { authenticateRequest } from './auth.js';
 
 export const resumeRouter = Router();
-function user(request: Request) { const value = request.header('x-user-id')?.trim(); if (!value) { const error = new Error('x-user-id header is required'); error.name = 'MissingUserError'; throw error; } return value; }
+function user(request: Request) { return authenticateRequest(request).userId; }
 const id = (request: Request) => z.string().trim().min(1).parse(request.params.id);
 
 resumeRouter.get('/', async (req, res) => res.json({ resumes: await listResumes(user(req)) }));

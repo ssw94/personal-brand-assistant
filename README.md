@@ -28,6 +28,8 @@ The web app runs at `http://localhost:5173` and the API at `http://localhost:400
 
 For profile persistence, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. These values identify the real user record to use locally; the app does not seed fictional users or profile data.
 
+Local development accepts these identity headers only when `NODE_ENV` is not `production`. Production API requests must use a signed HS256 Bearer JWT with `sub` set to the user ID and an optional `email` claim. Set a strong `AUTH_JWT_SECRET` (and optionally `AUTH_JWT_ISSUER`) on the API host; never put it in a `VITE_*` variable. The frontend currently has no bundled authentication provider, so connect it to your organization’s OIDC/session layer before exposing it to users. Set `AUTH_ALLOW_IDENTITY_HEADERS=false` explicitly in all deployed environments.
+
 The Resume Builder uses the profile as its source of truth. Resume documents store only selected profile IDs, section visibility/order, and resume-specific summary text. Draft edits autosave to the current version; “Save version” creates an immutable numbered version. PDF export can be added later without changing this model.
 
 AI Resume Optimization defaults to the credential-free `safe-mock` provider (`AI_PROVIDER=mock`). The provider contract lives in `apps/api/src/aiResumeProvider.ts`, so a vendor-backed implementation can be added later without changing the optimization API or review UI. Suggestions are never written into original resume facts automatically.
@@ -61,6 +63,10 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+The API includes a multi-stage Docker image at `apps/api/Dockerfile`. Build it from the repository root with `docker build -f apps/api/Dockerfile -t personal-brand-assistant-api .`; run Prisma migrations as a deployment step before starting the container. `docker compose up -d db` is intentionally a local PostgreSQL-only setup.
+
+The API applies security headers, strict production CORS configuration, request-size limits, and in-process rate limits (120 requests/minute globally, 20 requests/minute for assistant/application-package routes, and 30 requests/minute for resume routes). For multiple API instances, replace the in-process limiter with a shared store such as Redis.
 
 ## Docker
 
