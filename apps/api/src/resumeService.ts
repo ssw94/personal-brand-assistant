@@ -18,10 +18,11 @@ function defaultDocument(profile: { summary: string | null; experiences: Array<{
     projectIds: profile.projects.map(item => item.id),
     certificationIds: profile.certifications.map(item => item.id),
     achievementIds: profile.achievements.map(item => item.id),
+    acceptedSuggestionIds: [],
   };
 }
 
-async function ownedResume(userId: string, resumeId: string) {
+export async function ownedResume(userId: string, resumeId: string) {
   const resume = await prisma.resume.findFirst({ where: { id: resumeId, userId }, include: { versions: { orderBy: { version: 'desc' }, take: 1 }, user: { include: { profile: { include: profileForResume } } } } });
   if (!resume) throw new ResumeNotFoundError();
   return resume;

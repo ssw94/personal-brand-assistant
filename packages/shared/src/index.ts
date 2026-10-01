@@ -99,6 +99,7 @@ export const resumeDocumentSchema = z.object({
   projectIds: z.array(z.string().trim()),
   certificationIds: z.array(z.string().trim()),
   achievementIds: z.array(z.string().trim()),
+  acceptedSuggestionIds: z.array(z.string().trim()).default([]),
 });
 
 export const resumeCreateSchema = z.object({ title: z.string().trim().min(1, 'Resume name is required').max(120) });
@@ -106,3 +107,26 @@ export const resumeSaveSchema = z.object({ title: z.string().trim().min(1, 'Resu
 export type ResumeDocument = z.infer<typeof resumeDocumentSchema>;
 export type ResumeCreateInput = z.infer<typeof resumeCreateSchema>;
 export type ResumeSaveInput = z.infer<typeof resumeSaveSchema>;
+
+export const optimizationCategorySchema = z.enum(['keyword_alignment', 'missing_skill', 'bullet_improvement', 'measurable_achievement', 'summary', 'ats', 'irrelevant_content']);
+export const optimizationSuggestionStatusSchema = z.enum(['pending', 'accepted', 'rejected']);
+export const optimizationSuggestionSchema = z.object({
+  id: z.string().min(1),
+  category: optimizationCategorySchema,
+  title: z.string().min(1).max(200),
+  rationale: z.string().min(1).max(1000),
+  suggestedText: z.string().min(1).max(2000),
+  evidenceTerms: z.array(z.string().min(1)).max(20),
+  sourceFactIds: z.array(z.string().min(1)).max(20),
+  factStatus: z.literal('suggestion'),
+  status: optimizationSuggestionStatusSchema,
+});
+export const optimizationRequestSchema = z.object({ jobDescription: z.string().trim().min(40, 'Add a fuller job description to optimize against.').max(20000) });
+export const optimizationResultSchema = z.object({
+  provider: z.string().min(1),
+  keywordAlignment: z.object({ matched: z.array(z.string()), missing: z.array(z.string()) }),
+  atsConsiderations: z.array(z.string()),
+  suggestions: z.array(optimizationSuggestionSchema),
+});
+export type OptimizationSuggestion = z.infer<typeof optimizationSuggestionSchema>;
+export type OptimizationResult = z.infer<typeof optimizationResultSchema>;
