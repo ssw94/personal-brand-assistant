@@ -117,6 +117,7 @@ model ResumeVersion {
   version   Int
   content   Json
   createdAt DateTime @default(now())
+  applications Application[]
   @@unique([resumeId, version])
 }
 
@@ -138,9 +139,19 @@ model Job {
   company      String
   title        String
   location     String?
+  remoteStatus String?
   url          String?
   description  String?
+  skills       String[]      @default([])
+  experience   String?
+  salaryMin    Float?
+  salaryMax    Float?
+  salaryCurrency String?
+  source       String?
+  applicationUrl String?
+  postedDate   DateTime?
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   savedJob     SavedJob?
   applications Application[]
 }
@@ -150,6 +161,8 @@ model SavedJob {
   jobId   String   @unique
   job     Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   savedAt DateTime @default(now())
+  notes   String?
+  priority String @default("medium")
 }
 
 model Application {
@@ -160,10 +173,25 @@ model Application {
   job          Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   status       String
   appliedAt    DateTime?
+  resumeVersionId String?
+  resumeVersion ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
   notes        String?
+  interviewDate DateTime?
+  followUpDate DateTime?
+  updatedAt DateTime @updatedAt
   coverLetters CoverLetter[]
   interviews   Interview[]
   followUps    FollowUp[]
+  statusHistory ApplicationStatusHistory[]
+}
+
+model ApplicationStatusHistory {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fromStatus    String?
+  toStatus      String
+  changedAt     DateTime    @default(now())
 }
 
 model CoverLetter {

@@ -108,6 +108,23 @@ export type ResumeDocument = z.infer<typeof resumeDocumentSchema>;
 export type ResumeCreateInput = z.infer<typeof resumeCreateSchema>;
 export type ResumeSaveInput = z.infer<typeof resumeSaveSchema>;
 
+export const remoteStatusSchema = z.enum(['onsite', 'hybrid', 'remote', 'flexible']);
+export const jobPrioritySchema = z.enum(['low', 'medium', 'high']);
+export const applicationStatusSchema = z.enum(['Saved', 'Applied', 'Screening', 'Interview', 'Technical Interview', 'HR', 'Offer', 'Rejected', 'Withdrawn']);
+export const jobSchema = z.object({
+  title: z.string().trim().min(1, 'Job title is required').max(160), company: z.string().trim().min(1, 'Company is required').max(160),
+  location: optionalText(160), remoteStatus: remoteStatusSchema, description: optionalText(20000), skills: z.array(z.string().trim().min(1).max(120)).max(50), experience: optionalText(160),
+  salaryMin: z.number().nonnegative().nullable().default(null), salaryMax: z.number().nonnegative().nullable().default(null), salaryCurrency: optionalText(8), source: optionalText(120), applicationUrl: z.union([z.string().trim().url('Enter a valid URL'), z.literal('')]).default(''), postedDate: dateSchema.nullable().default(null),
+});
+export const savedJobSchema = z.object({ notes: optionalText(3000), priority: jobPrioritySchema.default('medium') });
+export const applicationCreateSchema = z.object({ jobId: z.string().trim().min(1), status: applicationStatusSchema.default('Saved'), appliedAt: dateSchema.nullable().default(null), resumeVersionId: z.string().trim().nullable().default(null), coverLetter: optionalText(12000), notes: optionalText(5000), interviewDate: dateSchema.nullable().default(null), followUpDate: dateSchema.nullable().default(null) });
+export const applicationUpdateSchema = applicationCreateSchema.partial().extend({ status: applicationStatusSchema.optional() });
+export type JobInput = z.infer<typeof jobSchema>;
+export type SavedJobInput = z.infer<typeof savedJobSchema>;
+export type ApplicationStatus = z.infer<typeof applicationStatusSchema>;
+export type ApplicationCreateInput = z.infer<typeof applicationCreateSchema>;
+export type ApplicationUpdateInput = z.infer<typeof applicationUpdateSchema>;
+
 export const optimizationCategorySchema = z.enum(['keyword_alignment', 'missing_skill', 'bullet_improvement', 'measurable_achievement', 'summary', 'ats', 'irrelevant_content']);
 export const optimizationSuggestionStatusSchema = z.enum(['pending', 'accepted', 'rejected']);
 export const optimizationSuggestionSchema = z.object({

@@ -32,6 +32,8 @@ The Resume Builder uses the profile as its source of truth. Resume documents sto
 
 AI Resume Optimization defaults to the credential-free `safe-mock` provider (`AI_PROVIDER=mock`). The provider contract lives in `apps/api/src/aiResumeProvider.ts`, so a vendor-backed implementation can be added later without changing the optimization API or review UI. Suggestions are never written into original resume facts automatically.
 
+Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
+
 To run checks:
 
 ```bash
