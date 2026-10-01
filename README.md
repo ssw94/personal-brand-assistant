@@ -42,6 +42,8 @@ The AI Career Assistant is available from the Career Assistant workspace. It ans
 
 Content Studio is available from the Content Studio workspace. It stores a content strategy, idea backlog, editable drafts, revisions, critique results, and review/approval state. The default `safe-mock` content provider only uses facts already present in the profile and marks critique as critique-only material. Drafts must be reviewed and approved before future scheduling or publishing integrations can act on them.
 
+The publishing endpoint is intentionally provider-based and credential-free in this version. `SafeMockPublishingProvider` records a successful local state transition without contacting LinkedIn or another third party; a real provider should be added only after OAuth, consent, rate limits, and the destination platform’s terms are implemented.
+
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
 ## Vercel deployment

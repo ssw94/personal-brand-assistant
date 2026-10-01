@@ -9,5 +9,6 @@ export const createIdea = (body: unknown) => request('/content/ideas', { method:
 export const listDrafts = () => request<{ drafts: Draft[] }>('/content/drafts');
 export const generateDraft = (body: unknown) => request<{ id: string }>('/content/drafts/generate', { method: 'POST', body: JSON.stringify(body) });
 export const updateDraft = (id: string, body: unknown) => request<{ draft: Draft }>(`/content/drafts/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+export const publishDraft = (id: string) => request<{ draft: Draft }>(`/content/drafts/${id}/publish`, { method: 'POST' });
 export const critiqueDraft = (id: string) => request<{ critique: Draft['critiques'][number] }>(`/content/drafts/${id}/critique`, { method: 'POST' });
 export const transformDraft = (id: string, action: string) => request<{ draft: Draft }>(`/content/drafts/${id}/transform`, { method: 'POST', body: JSON.stringify({ action }) });

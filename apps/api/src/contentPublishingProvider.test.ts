@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest';
+import { SafeMockPublishingProvider } from './contentPublishingProvider.js';
+describe('content publishing boundary', () => { it('does not fabricate an external post id', async () => { const result = await new SafeMockPublishingProvider().publish({ title: 'Draft', body: 'User-authored content' }); expect(result.status).toBe('published'); expect(result.externalId).toBeNull(); }); it('fails empty content safely', async () => { const result = await new SafeMockPublishingProvider().publish({ title: 'Draft', body: ' ' }); expect(result.status).toBe('failed'); }); });
