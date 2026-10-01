@@ -14,6 +14,7 @@ export const navigationItems = [
   { label: 'Resume', path: '/resume', icon: 'file-text' },
   { label: 'Jobs', path: '/jobs', icon: 'briefcase-business' },
   { label: 'Applications', path: '/applications', icon: 'kanban' },
+  { label: 'Application package', path: '/application-package', icon: 'package-check' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ] as const;
 
@@ -147,3 +148,27 @@ export const optimizationResultSchema = z.object({
 });
 export type OptimizationSuggestion = z.infer<typeof optimizationSuggestionSchema>;
 export type OptimizationResult = z.infer<typeof optimizationResultSchema>;
+
+export const coverLetterRequestSchema = z.object({
+  resumeId: z.string().trim().min(1, 'Select a resume.'),
+  jobDescription: z.string().trim().min(40, 'Add a fuller job description.').max(20000),
+  company: z.string().trim().min(1, 'Company is required.').max(160),
+  role: z.string().trim().min(1, 'Role is required.').max(160),
+});
+export const coverLetterUpdateSchema = z.object({ content: z.string().trim().min(80, 'Cover letter is too short.').max(12000) });
+export const coverLetterResultSchema = z.object({
+  provider: z.string().min(1), content: z.string().min(1).max(12000), sourceFactIds: z.array(z.string()), factStatus: z.literal('derived_from_user_facts'),
+});
+export type CoverLetterRequest = z.infer<typeof coverLetterRequestSchema>;
+export type CoverLetterResult = z.infer<typeof coverLetterResultSchema>;
+export const applicationPackageRequestSchema = coverLetterRequestSchema.extend({ jobId: z.string().trim().min(1).nullable().default(null) });
+export const applicationPackageSchema = z.object({
+  resume: z.object({ id: z.string(), title: z.string(), versionId: z.string(), version: z.number(), content: resumeDocumentSchema }),
+  coverLetterId: z.string(),
+  coverLetter: coverLetterResultSchema,
+  skillsMatch: z.array(z.string()), skillsGap: z.array(z.string()),
+  interviewPreparation: z.array(z.object({ question: z.string(), preparation: z.string(), sourceFactIds: z.array(z.string()) })),
+  checklist: z.array(z.string()),
+});
+export type ApplicationPackageRequest = z.infer<typeof applicationPackageRequestSchema>;
+export type ApplicationPackage = z.infer<typeof applicationPackageSchema>;

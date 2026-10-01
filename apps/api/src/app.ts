@@ -5,6 +5,7 @@ import { profileErrorStatus, profileRouter } from './profileRoutes.js';
 import { resumeErrorStatus, resumeRouter } from './resumeRoutes.js';
 import { applicationErrorStatus, applicationRouter } from './applicationRoutes.js';
 import { jobErrorStatus, jobRouter } from './jobRoutes.js';
+import { applicationPackageErrorStatus, applicationPackageRouter } from './applicationPackageRoutes.js';
 
 export function getHealthResponse() {
   return healthResponseSchema.parse({ status: 'ok', service: 'personal-brand-assistant-api', timestamp: new Date().toISOString() });
@@ -24,6 +25,7 @@ export function createApp() {
   app.use('/api/resumes', resumeRouter);
   app.use('/api/jobs', jobRouter);
   app.use('/api/applications', applicationRouter);
+  app.use('/api/application-packages', applicationPackageRouter);
 
   app.use((_request, response) => response.status(404).json({ error: 'Not found' }));
   const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
@@ -31,7 +33,8 @@ export function createApp() {
     const resumeStatus = resumeErrorStatus(error);
     const jobStatus = jobErrorStatus(error);
     const applicationStatus = applicationErrorStatus(error);
-    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus].find(candidate => candidate !== 500) ?? 500;
+    const packageStatus = applicationPackageErrorStatus(error);
+    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, packageStatus].find(candidate => candidate !== 500) ?? 500;
     if (status >= 500) console.error(error);
     response.status(status).json({ error: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Invalid request' });
   };

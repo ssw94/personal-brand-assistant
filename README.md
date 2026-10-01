@@ -32,6 +32,8 @@ The Resume Builder uses the profile as its source of truth. Resume documents sto
 
 AI Resume Optimization defaults to the credential-free `safe-mock` provider (`AI_PROVIDER=mock`). The provider contract lives in `apps/api/src/aiResumeProvider.ts`, so a vendor-backed implementation can be added later without changing the optimization API or review UI. Suggestions are never written into original resume facts automatically.
 
+The Application Package workspace generates a concise cover letter, skill match/gap review, interview prompts, and an application checklist from a selected resume and real job description. Generated letters are saved as editable drafts; the selected resume remains unchanged. The provider contract lives in `apps/api/src/aiCoverLetterProvider.ts`. The default provider only derives statements from supplied profile/resume facts and labels gaps as items to review, never as qualifications.
+
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
 ## Vercel deployment

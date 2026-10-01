@@ -17,6 +17,7 @@ model User {
   jobs          Job[]
   applications  Application[]
   conversations AIConversation[]
+  coverLetters   CoverLetter[]
 }
 
 model Profile {
@@ -195,11 +196,20 @@ model ApplicationStatusHistory {
 }
 
 model CoverLetter {
-  id            String      @id @default(cuid())
-  applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  content       String
-  createdAt     DateTime    @default(now())
+  id             String       @id @default(cuid())
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId  String?
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  resumeId       String?
+  company        String?
+  role           String?
+  jobDescription String?
+  provider       String?
+  content        String
+  sourceFactIds  String[]     @default([])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Interview {
