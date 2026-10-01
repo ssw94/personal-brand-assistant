@@ -18,6 +18,7 @@ export const navigationItems = [
   { label: 'Interview prep', path: '/interview-preparation', icon: 'message-circle-question' },
   { label: 'Career assistant', path: '/career-assistant', icon: 'bot' },
   { label: 'Content studio', path: '/content-studio', icon: 'pen-line' },
+  { label: 'Billing', path: '/billing', icon: 'credit-card' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ] as const;
 
