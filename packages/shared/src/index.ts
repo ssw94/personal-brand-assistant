@@ -16,6 +16,7 @@ export const navigationItems = [
   { label: 'Applications', path: '/applications', icon: 'kanban' },
   { label: 'Application package', path: '/application-package', icon: 'package-check' },
   { label: 'Interview prep', path: '/interview-preparation', icon: 'message-circle-question' },
+  { label: 'Career assistant', path: '/career-assistant', icon: 'bot' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ] as const;
 
@@ -200,3 +201,14 @@ export type InterviewPreparationRequest = z.infer<typeof interviewPreparationReq
 export type InterviewPreparationUpdate = z.infer<typeof interviewPreparationUpdateSchema>;
 export type InterviewPreparation = z.infer<typeof interviewPreparationSchema>;
 export type InterviewPreparationResponse = z.infer<typeof interviewPreparationResponseSchema>;
+
+export const assistantEvidenceSchema = z.object({ type: z.enum(['profile', 'job', 'application', 'resume', 'interview']), id: z.string(), label: z.string(), detail: z.string() });
+export const assistantAnswerSchema = z.object({ provider: z.string(), intent: z.string(), answer: z.string().min(1).max(12000), evidence: z.array(assistantEvidenceSchema).max(50) });
+export const assistantMessageSchema = z.object({ id: z.string(), role: z.enum(['user', 'assistant']), content: z.string(), evidence: z.array(assistantEvidenceSchema).default([]), createdAt: z.string().datetime({ offset: true }) });
+export const assistantAskSchema = z.object({ question: z.string().trim().min(2, 'Ask a question.').max(2000), conversationId: z.string().trim().min(1).nullable().default(null) });
+export const assistantConversationSchema = z.object({ id: z.string(), title: z.string().nullable(), messages: z.array(assistantMessageSchema), createdAt: z.string().datetime({ offset: true }), updatedAt: z.string().datetime({ offset: true }) });
+export type AssistantEvidence = z.infer<typeof assistantEvidenceSchema>;
+export type AssistantAnswer = z.infer<typeof assistantAnswerSchema>;
+export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
+export type AssistantAsk = z.infer<typeof assistantAskSchema>;
+export type AssistantConversation = z.infer<typeof assistantConversationSchema>;

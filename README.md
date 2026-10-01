@@ -36,6 +36,8 @@ The Application Package workspace generates a concise cover letter, skill match/
 
 Interview Preparation is available for tracked applications. It generates technical topics, topic categories, resume-based prompts, behavioral prompts, role-specific prompts, and a checklist from the selected job and available resume facts. Every generated item is labeled preparation material rather than a guaranteed interview question. Interview stage, date, notes, and user-authored answers are persisted independently from generated content.
 
+The AI Career Assistant is available from the Career Assistant workspace. It answers questions using the current user’s saved profile, jobs, applications, resumes, and interview preparation. Important answers include expandable evidence showing the underlying records; when a recommendation cannot be confirmed from stored data, the assistant says so. Questions and answers are persisted in `AIConversation` history.
+
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
 ## Vercel deployment
