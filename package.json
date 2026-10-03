@@ -4,8 +4,13 @@
   "type": "module",
   "version": "0.1.0",
   "packageManager": "npm@11.9.0",
-  "engines": { "node": ">=22.15.0 <23" },
-  "workspaces": ["apps/*", "packages/*"],
+  "engines": {
+    "node": ">=22.15.0 <23"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace @pba/api\" \"npm run dev --workspace @pba/web\"",
     "build": "npm run build --workspace @pba/shared && npm run build --workspace @pba/api && npm run build --workspace @pba/web",
@@ -20,12 +25,18 @@
     "db:setup": "npm run db:setup --workspace @pba/api"
   },
   "devDependencies": {
+    "@eslint/js": "^9.22.0",
     "@types/node": "^22.15.0",
     "concurrently": "^9.1.2",
-    "@eslint/js": "^9.22.0",
     "eslint": "^9.22.0",
-    "typescript-eslint": "^8.26.0",
     "prettier": "^3.5.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.26.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.4.0",
+    "@mui/material": "^9.4.0"
   }
 }

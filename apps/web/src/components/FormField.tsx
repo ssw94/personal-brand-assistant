@@ -1,4 +1,15 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
-export function FormField({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) { return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input {...props} className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>; }
-export function TextAreaField({ label, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) { return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><textarea {...props} className="min-h-28 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></label>; }
-export function SelectField({ label, children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string; children: ReactNode }) { const accessibleLabel = label || props['aria-label'] || 'Select option'; return <label className="block"><span className={label ? 'mb-1.5 block text-sm font-medium text-slate-700' : 'sr-only'}>{accessibleLabel}</span><select {...props} aria-label={props['aria-label'] ?? accessibleLabel} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">{children}</select></label>; }
+import { Children, isValidElement } from 'react';
+import type { ReactNode } from 'react';
+import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
+
+export function FormField({ label, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return <TextField fullWidth label={label} type={props.type} required={props.required} value={props.value} placeholder={props.placeholder} slotProps={{ htmlInput: { minLength: props.minLength, maxLength: props.maxLength } }} onChange={props.onChange} onBlur={props.onBlur} disabled={props.disabled} />;
+}
+export function TextAreaField({ label, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
+  return <TextField fullWidth multiline minRows={4} label={label} required={props.required} value={props.value} placeholder={props.placeholder} onChange={props.onChange} onBlur={props.onBlur} disabled={props.disabled} />;
+}
+export function SelectField({ label, children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string; children: ReactNode }) {
+  const accessibleLabel = label || props['aria-label'] || 'Select option';
+  return <FormControl fullWidth size="small"><InputLabel>{accessibleLabel}</InputLabel><Select label={accessibleLabel} value={props.value ?? ''} onChange={props.onChange as never}>{Children.toArray(children).map((child) => { if (!isValidElement(child)) return null; const option = child.props as { value?: string | number; children?: ReactNode }; return option.value === undefined ? null : <MenuItem key={String(option.value)} value={option.value}>{option.children}</MenuItem>; })}</Select></FormControl>;
+}
