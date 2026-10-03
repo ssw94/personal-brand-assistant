@@ -1,30 +1,47 @@
 # Personal Brand AI — User Flows
 
-## New user
+## Onboarding and Professional Memory
 
-1. Visitor reviews the landing page and pricing.
-2. User signs up and accepts terms.
-3. User completes onboarding with truthful profile information.
-4. Dashboard identifies profile completeness and the next useful action.
+1. User signs up, accepts terms, and completes onboarding.
+2. User enters or uploads professional information.
+3. System extracts candidate facts with provenance.
+4. User reviews, edits, approves, or rejects candidates.
+5. Approved facts become Professional Memory; source profile facts remain user-controlled.
+6. User selects audience, pillars, posting goals, and writing style preferences/examples.
 
-## Create and publish content
+## Research and topic planning
 
-1. User opens Content Studio.
-2. User supplies topic, content pillar, audience, tone, and context.
-3. AI generates an editable draft grounded in available user information.
-4. User edits, critiques, improves, saves, and submits the draft for review.
-5. User explicitly approves the draft.
-6. User schedules it or publishes it through an official/approved LinkedIn API connection.
-7. The system reports publishing status, failure reason, and retry-safe next steps.
+1. User requests ideas or starts from a content pillar.
+2. Topic Agent retrieves authorized memory, style, prior content, accepted analytics feedback, and optionally approved research.
+3. Research Agent fetches only allowed sources and stores citations/freshness.
+4. Topic Agent returns reviewable candidates with rationale and source references.
+5. User selects or edits a topic; no candidate is automatically published.
 
-## Content calendar
+## Generate, critique, revise, approve
 
-User can switch month/week/day views, see draft/scheduled/published statuses, open a post preview, create a post, and reschedule or cancel where the connected backend supports it.
+1. User selects a topic and starts generation.
+2. Writer Agent creates an editable, source-referenced draft.
+3. User edits or asks Critic Agent for rubric-based feedback.
+4. User selects improvements; Revision Agent creates a new immutable revision.
+5. User submits the draft for review and explicitly approves it.
+6. Only an approved draft can be scheduled or sent to the publisher.
 
-## Subscription
+## LinkedIn publishing
 
-User sees the current plan, centralized usage allowance, current period usage, and available plan choices. Paid activation, entitlements, usage counters, renewal, and cancellation are server-side concerns.
+1. User starts OAuth and approves official LinkedIn scopes.
+2. Server validates OAuth state/PKCE and stores token material server-side.
+3. User sees the confirmed connected profile and publishing eligibility.
+4. User schedules or publishes an approved draft.
+5. A durable PublishingJob attempts the official API call with an idempotency key.
+6. UI displays confirmed external ID or a redacted failure/retry state.
 
-## Grounding and safety
+## Calendar and analytics
 
-Every generated career or content result remains editable. Where source evidence matters, the UI should show the originating profile facts or a clear “suggestion” status. No flow may imply LinkedIn connection, publishing success, paid entitlement, or production AI availability without backend confirmation.
+Calendar supports month/week/day views, drafts, scheduled posts, published posts, failure states, reschedule, cancellation, and post preview. Analytics imports available official metrics, aggregates by period, and displays observed metrics separately from AI recommendations. Analytics Intelligence can produce traceable feedback candidates for Topic Agent.
+
+## Subscription and usage
+
+1. User sees a server-confirmed plan, billing period, allowance, used amount, remaining amount, and renewal status.
+2. API checks entitlement and atomically reserves usage before metered AI/publishing work.
+3. Stripe signed webhooks update subscription state; the browser cannot grant paid access.
+4. Limit errors explain the blocked feature and the server-confirmed next action.

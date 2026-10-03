@@ -2,30 +2,57 @@
 
 ## Product definition
 
-Personal Brand AI is an AI SaaS for software engineers and technology professionals. It turns a user-owned professional profile into a reliable workspace for personal-brand content, career materials, job workflows, and interview preparation.
+Personal Brand AI is an AI SaaS for software engineers and technology professionals. It turns a user-owned professional profile, resume, writing style, research context, and performance history into a trustworthy personal-brand publishing workflow and career workspace.
 
-The product should feel intelligent and helpful without fabricating facts. Generated material is editable, reviewable, and attributable to the user's source information where applicable.
+The product must be useful without fabricating facts. User facts remain authoritative; generated content is editable, attributable to sources where applicable, and blocked from publishing until explicit human approval.
+
+## Primary product loop
+
+```text
+Professional Profile
+→ Professional Memory
+→ Writing Style
+→ Research Agent
+→ Topic Agent
+→ Writer Agent
+→ Critic Agent
+→ Revision Agent
+→ Human Approval
+→ LinkedIn Publisher
+→ Analytics
+→ Analytics Intelligence
+→ Topic Agent feedback loop
+```
+
+The loop is a target product architecture. Safe mocks in the current repository do not count as completed production stages.
 
 ## Product principles
 
 1. Truth before polish: never invent a qualification, employer, project, metric, or achievement.
-2. User control: AI drafts require review and explicit approval before publishing.
-3. One professional source of truth: profile information powers downstream workflows.
-4. Calm workflow: reduce context switching and make the next action obvious.
-5. Provider boundaries: external integrations are explicit, secure, and replaceable.
+2. User control: AI drafts require review and explicit approval before scheduling or publishing.
+3. One source of professional truth: profile and reviewed resume facts feed memory and downstream workflows.
+4. Explainable assistance: generated topics, claims, critiques, revisions, and recommendations retain source/context references.
+5. Secure provider boundaries: model, research, LinkedIn, Stripe, storage, and email providers are server-side and replaceable.
+6. Calm workflow: make state, next action, limits, and failure recovery obvious.
 
 ## Product areas
 
-- Public website: landing, features, pricing, sign in, sign up, and onboarding.
-- Professional foundation: profile, experience, education, skills, projects, certifications, achievements, and resume documents.
-- Career workflows: jobs, applications, application packages, interview preparation, and career assistant.
-- Personal brand: content strategy, ideas, AI post generation, drafts, critique, improvement, approval, calendar, scheduling, publishing history, and analytics.
-- Integrations and account: LinkedIn connection, billing, subscription, usage, and settings.
+- Professional foundation: profile, resume upload/ingestion, resume builder, experience, education, skills, projects, certifications, achievements.
+- Intelligence: Professional Memory, writing style preferences/examples, research, topics, content pillars, strategy, and analytics intelligence.
+- Content: AI post generation, drafts, revisions, critique, improvement, approval, calendar, scheduling, publishing history, and analytics.
+- Career: jobs, applications, application packages, interview preparation, and grounded career assistant.
+- Account: authentication, onboarding, subscription, usage, billing, LinkedIn connection, and settings.
 
-## Content workflow
+## Content state machine
 
-Content follows a reviewable lifecycle: `DRAFT → REVIEW → APPROVED → SCHEDULED → PUBLISHING → PUBLISHED`, with `PUBLISH_FAILED` as a recoverable terminal state for an attempted publish. AI can generate, critique, and transform drafts; it cannot silently publish or change user facts.
+`DRAFT → REVIEW → APPROVED → SCHEDULED → PUBLISHING → PUBLISHED`
 
-## Scope boundaries
+`PUBLISH_FAILED` is a recoverable state. Every transition is server-authorized, persisted, audited, and idempotent. A failed publication may retry through a durable job; it may not silently become published.
 
-LinkedIn scraping is prohibited. LinkedIn features use official/approved APIs only. Production OAuth, publishing, AI vendors, Stripe, and usage enforcement require their respective secure server-side integrations; absent those integrations, the UI must state the limitation plainly.
+## Non-goals and constraints
+
+- No LinkedIn scraping, crawling, auto-apply, or unofficial publishing.
+- No browser-authoritative subscription, entitlement, or usage state.
+- No direct provider SDK calls from React.
+- No automatic mutation of source profile facts from AI output.
+- No microservices split until the modular monolith has a demonstrated operational reason to split.
