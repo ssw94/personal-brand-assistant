@@ -30,6 +30,8 @@ model User {
   contentApprovals    ContentApproval[]   @relation("ContentApprovalOwner")
   approvalActions     ContentApproval[]   @relation("ContentApprovalActor")
   idempotencyRecords  IdempotencyRecord[]
+  agentRuns           AgentRun[]
+  agentArtifacts      AgentArtifact[]
 }
 
 model Profile {
@@ -337,26 +339,27 @@ model ContentIdea {
 }
 
 model ContentDraft {
-  id            String             @id @default(cuid())
-  userId        String
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sourceIdeaId  String?
-  sourceIdea    ContentIdea?       @relation(fields: [sourceIdeaId], references: [id], onDelete: SetNull)
-  title         String
-  topic         String
-  body          String
-  status        ContentDraftStatus @default(DRAFT)
-  sourceFactIds String[]           @default([])
-  failureReason String?
-  reviewedAt    DateTime?
-  approvedAt    DateTime?
-  scheduledAt   DateTime?
-  publishedAt   DateTime?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  revisions     ContentRevision[]
-  critiques     ContentCritique[]
-  approvals     ContentApproval[]
+  id             String             @id @default(cuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceIdeaId   String?
+  sourceIdea     ContentIdea?       @relation(fields: [sourceIdeaId], references: [id], onDelete: SetNull)
+  title          String
+  topic          String
+  body           String
+  status         ContentDraftStatus @default(DRAFT)
+  sourceFactIds  String[]           @default([])
+  failureReason  String?
+  reviewedAt     DateTime?
+  approvedAt     DateTime?
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  revisions      ContentRevision[]
+  critiques      ContentCritique[]
+  approvals      ContentApproval[]
+  agentArtifacts AgentArtifact[]
 
   @@index([userId, status, updatedAt])
   @@index([userId, scheduledAt])
@@ -364,14 +367,15 @@ model ContentDraft {
 }
 
 model ContentRevision {
-  id         String            @id @default(cuid())
-  draftId    String
-  draft      ContentDraft      @relation(fields: [draftId], references: [id], onDelete: Cascade)
-  version    Int
-  body       String
-  changeType String
-  createdAt  DateTime          @default(now())
-  approvals  ContentApproval[]
+  id             String            @id @default(cuid())
+  draftId        String
+  draft          ContentDraft      @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  version        Int
+  body           String
+  changeType     String
+  createdAt      DateTime          @default(now())
+  approvals      ContentApproval[]
+  agentArtifacts AgentArtifact[]
 
   @@unique([draftId, version])
   @@index([draftId, createdAt])
@@ -398,6 +402,111 @@ enum IdempotencyStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AgentFailureCategory {
+  CONFIGURATION
+  AUTHENTICATION
+  RATE_LIMIT
+  TIMEOUT
+  PROVIDER_UNAVAILABLE
+  INVALID_REQUEST
+  INVALID_OUTPUT
+  SAFETY_POLICY
+  CANCELLED
+  UNKNOWN
+}
+
+model AgentRun {
+  id               String                @id @default(cuid())
+  userId           String
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operation        String
+  status           AgentRunStatus        @default(QUEUED)
+  provider         String
+  model            String
+  promptIdentifier String
+  promptVersion    Int
+  correlationId    String?
+  idempotencyKey   String?
+  inputTokenCount  Int?
+  outputTokenCount Int?
+  totalTokenCount  Int?
+  estimatedCost    Float?
+  costCurrency     String?
+  failureCategory  AgentFailureCategory?
+  failureMessage   String?
+  queuedAt         DateTime              @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  artifacts        AgentArtifact[]
+  usages           ModelUsage[]
+
+  @@unique([id, userId])
+  @@index([userId, status, createdAt])
+  @@index([userId, operation, createdAt])
+  @@index([userId, idempotencyKey])
+}
+
+model AgentArtifact {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runId        String
+  run          AgentRun         @relation(fields: [runId, userId], references: [id, userId], onDelete: Cascade)
+  artifactType String
+  payload      Json?
+  draftId      String?
+  draft        ContentDraft?    @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  revisionId   String?
+  revision     ContentRevision? @relation(fields: [revisionId], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now())
+
+  @@index([userId, artifactType, createdAt])
+  @@index([runId, createdAt])
+  @@index([draftId])
+  @@index([revisionId])
+}
+
+model PromptVersion {
+  id             String   @id @default(cuid())
+  identifier     String
+  version        Int
+  schemaName     String?
+  templateDigest String
+  description    String?
+  createdAt      DateTime @default(now())
+
+  @@unique([identifier, version])
+  @@index([identifier, createdAt])
+}
+
+model ModelUsage {
+  id            String   @id @default(cuid())
+  runId         String
+  run           AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  provider      String
+  model         String
+  inputTokens   Int?
+  outputTokens  Int?
+  totalTokens   Int?
+  estimatedCost Float?
+  costCurrency  String?
+  createdAt     DateTime @default(now())
+
+  @@index([runId, createdAt])
+  @@index([provider, model, createdAt])
 }
 
 model AuditEvent {
