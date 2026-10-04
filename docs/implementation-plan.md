@@ -33,33 +33,33 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 ## Phase 1: Core domain/database
 
 - **Objective:** establish authoritative domain entities, typed states, ownership, provenance, and idempotency foundations.
-- **Required database changes:** add MemoryFact/source/version, SourceDocument/IngestionJob, WritingStyleProfile/example, AgentRun/artifact/prompt version/model usage, LinkedInAccount/OAuthState, PublishingJob/Attempt/PublishedPost, analytics event/snapshot, SubscriptionPlan/Subscription/Entitlement/UsagePeriod/UsageRecord/StripeCustomer/StripeEvent; add constraints/indexes; evolve content status and approval audit.
+- **Required database changes:** evolve the existing `User`, `Profile`, `Resume`, `ResumeVersion`, `ContentStrategy`, `ContentPillar`, `ContentIdea`, `ContentDraft`, `ContentRevision`, and `ContentCritique` models; add only shared primitives needed by every later domain (ownership/audit/idempotency conventions and migration-safe typed status strategy). Do not create parallel profile, resume, or draft/artifact tables. Domain-specific tables are introduced in their owning phases.
 - **Required APIs:** shared Zod contracts for new IDs, states, ownership, errors, job status, and plan/usage projections.
-- **Required services:** domain repositories/policies, ownership guard, transaction/idempotency utilities, audit-event writer.
+- **Required services:** domain repositories/policies, ownership guard, transaction/idempotency utilities, audit-event writer, secure migration/rollback helpers.
 - **Required UI:** none beyond contract-safe existing surfaces; do not build individual pages yet.
 - **Dependencies:** current schema audit and product decisions.
 - **Tests:** migration/schema validation, ownership isolation, state/constraint tests, idempotency-key tests.
-- **Security considerations:** direct user scoping, least-privilege relations, no raw tokens, immutable source facts, safe indexes.
-- **Definition of done:** migrations apply cleanly; models have ownership and required indexes; shared contracts compile; no provider or UI behavior is implied.
+- **Security considerations:** direct user scoping, least-privilege relations, no raw tokens, immutable source-fact policy, migration rollback, and production authentication configuration checks. These are prerequisites, not a later hardening task.
+- **Definition of done:** migrations apply cleanly; existing models are evolved rather than duplicated; shared ownership/status/idempotency contracts compile; no provider or UI behavior is implied.
 - **Expected commit:** `feat: establish personal brand core domain`
 
 ## Phase 2: AI infrastructure
 
 - **Objective:** provide a real server-side model boundary without implementing individual agents.
-- **Required database changes:** persist prompt/model versions, AgentRun, artifact status, token/cost metadata, redacted failure categories.
+- **Required database changes:** add `AgentRun`, `AgentArtifact`, `PromptVersion`, and `ModelUsage`; these are generic AI execution entities, not content-draft replacements. Link content outputs to existing `ContentDraft`/`ContentRevision` records by reference.
 - **Required APIs:** internal Model Gateway contract; authenticated run-status endpoint; no vendor SDK exposed to clients.
 - **Required services:** ModelGateway, prompt registry/versioning, structured-output validator, timeout/retry/budget policy, redaction utility.
 - **Required UI:** no new UI; expose only future-safe run status contracts.
 - **Dependencies:** Phase 1, selected approved model provider, secret configuration.
 - **Tests:** provider contract with fake transport, timeout/retry, schema rejection, redaction, budget, cancellation.
-- **Security considerations:** server-only keys, prompt/data separation, content limits, no raw sensitive logging.
-- **Definition of done:** model calls can be invoked only server-side through a versioned typed gateway; no fake agent is added.
+- **Security considerations:** server-only keys, prompt/data separation, content limits, redacted logs, cancellation propagation, provider allowlisting, and prompt-injection-safe input envelopes. This is an implementation gate for every later agent.
+- **Definition of done:** model calls can be invoked only server-side through a versioned typed gateway with structured output validation, retry/timeout/cancellation, usage tracking, and fake transport tests; no fake agent is added.
 - **Expected commit:** `feat: add server-side ai infrastructure`
 
 ## Phase 3: Professional Intelligence
 
 - **Objective:** create Professional Memory and Writing Style as shared, reviewable inputs.
-- **Required database changes:** MemoryFact, source/provenance, fact versions/confidence/verification, WritingStyleProfile/examples, review decisions.
+- **Required database changes:** add `SourceDocument`, `MemorySource`, `MemoryFact`, `MemoryFactVersion`, `WritingStyleProfile`, `WritingStyleExample`, and review decisions. These extend Profile/Resume provenance; they do not duplicate Profile, Resume, or ResumeVersion.
 - **Required APIs:** memory list/review/update; style read/update/example management; source references.
 - **Required services:** memory normalization/retrieval, profile/resume projection, style preference policy, approval workflow.
 - **Required UI:** later profile/memory/style review surfaces; no isolated UI implementation in this planning task.
@@ -74,11 +74,11 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 - **Objective:** add approved, citation-backed research as untrusted context.
 - **Required database changes:** ResearchRun, ResearchSource, ResearchCitation, content hash, freshness, source policy, safety classification.
 - **Required APIs:** create research run, get run/status, list sources/citations; all user-scoped and bounded.
-- **Required services:** ResearchProvider interface, allowlisted fetcher, parser/summarizer via Model Gateway, citation resolver, SSRF defense.
+- **Required services:** ResearchProvider interface, capability/allowlist registry, allowlisted fetcher, parser/summarizer via Model Gateway, citation resolver, SSRF defense, prompt-injection isolation, and source freshness policy.
 - **Required UI:** later research/context review; no page-first work.
 - **Dependencies:** Phases 1–3, approved provider/domain policy.
 - **Tests:** source normalization, citation coverage, freshness, SSRF/URL policy, prompt injection corpus, timeout/size limits.
-- **Security considerations:** retrieved text is data, not instructions; no arbitrary URLs, internal IPs, secrets, or unrestricted tools.
+- **Security considerations:** retrieved text is data, not instructions; no arbitrary URLs, internal IPs, secrets, or unrestricted tools. Research provider capabilities must be explicit; absence of a provider must be a typed unavailable state, not empty/fake research.
 - **Definition of done:** research artifacts are reviewable, cited, freshness-aware, and safe to pass to agents.
 - **Expected commit:** `feat: add approved research boundary`
 
@@ -89,7 +89,7 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 - **Required APIs:** create topic run, list candidates, select/edit/reject candidate.
 - **Required services:** Topic Agent contract, context assembler, deduplication, source/rationale validator, usage reservation.
 - **Required UI:** later ideas/topic workspace using candidate states.
-- **Dependencies:** Phases 2–4; analytics feedback optional until Phase 14.
+- **Dependencies:** Phases 2–4 and the Phase 15A entitlement/usage gate; analytics feedback is optional until Phase 14, but the Topic Agent cannot run in production without metering.
 - **Tests:** grounding, deduplication, ownership, candidate approval, injection resistance, usage limits.
 - **Security considerations:** no candidate changes memory or publishes; research claims retain citations.
 - **Definition of done:** candidate generation is real, typed, traceable, reviewable, and not a post/publish operation.
@@ -98,7 +98,7 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 ## Phase 6: Writer Agent
 
 - **Objective:** turn one approved topic/context bundle into an editable grounded draft.
-- **Required database changes:** DraftArtifact/model and agent artifact linkage; evolve existing ContentDraft/Revision without duplicating data.
+- **Required database changes:** no new draft model; link the Phase 2 `AgentArtifact` to the existing `ContentDraft`/`ContentRevision`, and add only missing source/claim references.
 - **Required APIs:** create writer run, read run/artifact, create draft from selected topic.
 - **Required services:** Writer Agent, claim/source resolver, platform constraint validator, content usage reservation.
 - **Required UI:** later Content Studio generation/editor integration.
@@ -167,7 +167,7 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 - **Required APIs:** OAuth start/callback, account status/disconnect, publish command, history/detail.
 - **Required services:** LinkedInProvider, OAuth state/PKCE, token encryption/rotation, provider error mapping.
 - **Required UI:** later connection, publishing status, history, external ID/error states.
-- **Dependencies:** Phases 1, 10, 15; approved LinkedIn app/scopes.
+- **Dependencies:** Phases 1, 10, 15A; approved LinkedIn app/scopes and an explicit capability matrix for profile, publishing, and analytics APIs.
 - **Tests:** OAuth state/PKCE/replay, token redaction, disconnect, provider contract, external ID confirmation, failure classification.
 - **Security considerations:** official APIs only, server tokens, no scraping, no success without provider confirmation.
 - **Definition of done:** a connected account can publish only approved content through official API and records a confirmed result.
@@ -189,11 +189,11 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 ## Phase 13: Analytics
 
 - **Objective:** capture publication/performance events and expose trustworthy metrics.
-- **Required database changes:** AnalyticsEvent, PostMetricSnapshot, FollowerMetricSnapshot, aggregation periods and provider cursor.
+- **Required database changes:** AnalyticsEvent, PostMetricSnapshot, FollowerMetricSnapshot, aggregation periods, provider cursor, and provider capability snapshots.
 - **Required APIs:** metric ingestion/sync, post performance, dashboard aggregates, date-range filters.
-- **Required services:** provider analytics adapter, event normalizer, aggregator, privacy/redaction policy.
+- **Required services:** provider analytics adapter, capability discovery, event normalizer, aggregator, privacy/redaction policy. Metrics must be marked unavailable when the approved LinkedIn API does not provide them; do not synthesize impressions, follower growth, or engagement.
 - **Required UI:** later analytics dashboard, post performance, activity cards, restrained charts.
-- **Dependencies:** Phase 11 for publication and approved LinkedIn analytics capabilities.
+- **Dependencies:** Phase 11 for account/provider capability discovery and approved LinkedIn analytics capabilities. Each metric is optional and capability-gated.
 - **Tests:** event dedupe, aggregation correctness, date zones, missing metrics, provider pagination, ownership.
 - **Security considerations:** metric scope/consent, no cross-user data, provider token boundaries.
 - **Definition of done:** observed metrics are persisted, reproducible, source-labeled, and available by post/period.
@@ -214,15 +214,15 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 
 ## Phase 15: Usage/Entitlements
 
-- **Objective:** enforce feature access and quotas server-side.
+- **Objective:** enforce feature access and quotas server-side. This phase has two gates: **15A**, required before any production AI/agent work; and **15B**, full billing-period/usage reconciliation completed before paid launch.
 - **Required database changes:** centralized plan/entitlement records, UsagePeriod, UsageRecord, reservations/idempotency.
 - **Required APIs:** current plan/usage, entitlement check, limit response, internal consume/release/reconcile.
 - **Required services:** entitlement resolver, atomic usage service, period calculator, plan projection.
 - **Required UI:** later usage/limit states; no local plan authority.
-- **Dependencies:** Phase 1; pricing decision; before metered agent/publishing production launch.
+- **Dependencies:** Phase 1 and the pricing decision. 15A must complete before Phase 5; 15B must complete before Phase 16 and production paid access.
 - **Tests:** concurrent consumption, period rollover, plan changes, Team custom usage, bypass attempts, refund/release semantics.
 - **Security considerations:** browser cannot set plan; every metered endpoint checks server state before side effects.
-- **Definition of done:** all metered capabilities use one authoritative policy and limits cannot be bypassed by alternate endpoints.
+- **Definition of done:** 15A provides authoritative plan/feature policy, a safe usage reservation interface, and deny-by-default behavior for unmetered production capabilities; 15B adds complete periods, reconciliation, and paid-plan enforcement. Limits cannot be bypassed by alternate endpoints.
 - **Expected commit:** `feat: add usage and entitlement enforcement`
 
 ## Phase 16: Stripe
@@ -240,7 +240,7 @@ This plan is based on `docs/gap-analysis.md`, the current Prisma/Express/React r
 
 ## Phase 17: Security hardening
 
-- **Objective:** close integration and production security gaps before broad exposure.
+- **Objective:** close integration and production security gaps before broad exposure. This phase is a final hardening pass, not the first time security is considered; Phase 1, Phase 2, Phase 4, Phase 11, Phase 12, and Phase 16 each have blocking security gates.
 - **Required database changes:** security audit events, token/key rotation metadata, retention fields where required.
 - **Required APIs:** secure session/OIDC integration, password reset if retained, account revoke, admin/provider disable controls.
 - **Required services:** threat controls, redaction, secret rotation, upload sandbox, prompt-injection guardrails, SSRF protection.
@@ -271,6 +271,7 @@ Phase 1 Core domain/database
  ├── Phase 2 AI infrastructure
  │    └── Phase 3 Professional Intelligence
  │         └── Phase 4 Research
+ │              ├── Phase 15A Usage/Entitlement gate
  │              └── Phase 5 Topic Agent
  │                   └── Phase 6 Writer
  │                        └── Phase 7 Critic
@@ -282,13 +283,13 @@ Phase 1 Core domain/database
  │                                            │         └── Phase 13 Analytics
  │                                            │              └── Phase 14 Intelligence
  │                                            │                   └── Topic feedback
- │                                            └── Phase 15 Usage/Entitlements
+ │                                            └── Phase 15B Usage reconciliation
  │                                                 └── Phase 16 Stripe
  └── Phase 17 Security hardening
       └── Phase 18 E2E/Production
 ```
 
-Phase 15 must be started early enough that production agents/publishing never launch without metering; its implementation is shown after the workflow for readability but is a cross-cutting dependency of Phases 5–14. Phase 17 also spans every phase.
+Phase 15A is a prerequisite gate before Phase 5 and every production agent/publishing call. Phase 15B completes reconciliation and paid-plan enforcement before Phase 16/production paid access. Phase 17 also spans every phase; its late placement is only the final audit/hardening pass. LinkedIn Analytics is capability-gated per provider and never assumed to exist merely because publishing exists.
 
 ## Priority classification
 
