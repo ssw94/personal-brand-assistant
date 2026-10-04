@@ -10,19 +10,25 @@ suite('Phase 1 database constraints', () => {
   let revisionId = '';
   let approvalId = '';
   let auditId = '';
+  let otherUserId = '';
+  let runId = '';
 
   beforeAll(async () => {
     await prisma.$connect();
     const user = await prisma.user.create({ data: { email: `phase1-${Date.now()}@example.test` } });
     userId = user.id;
+    const otherUser = await prisma.user.create({ data: { email: `phase1-other-${Date.now()}@example.test` } });
+    otherUserId = otherUser.id;
     const draft = await prisma.contentDraft.create({ data: { userId, title: 'Phase 1 test', topic: 'Migration safety', body: 'Test body' } });
     draftId = draft.id;
-    const revision = await prisma.contentRevision.create({ data: { draftId, version: 1, body: draft.body, changeType: 'test' } });
+    const revision = await prisma.contentRevision.create({ data: { draftId, userId, version: 1, body: draft.body, changeType: 'test' } });
     revisionId = revision.id;
     const approval = await prisma.contentApproval.create({ data: { ownerUserId: userId, actorUserId: userId, draftId, revisionId, decision: 'APPROVED' } });
     approvalId = approval.id;
     const audit = await prisma.auditEvent.create({ data: { ownerUserId: userId, actorUserId: userId, resourceType: 'ContentDraft', resourceId: draftId, action: 'test', result: 'success' } });
     auditId = audit.id;
+    const run = await prisma.agentRun.create({ data: { userId, operation: 'test', provider: 'fake', model: 'fake', promptIdentifier: 'test', promptVersion: 1, schemaName: 'TestOutput', schemaVersion: 1 } });
+    runId = run.id;
   });
 
   afterAll(async () => {
@@ -30,6 +36,7 @@ suite('Phase 1 database constraints', () => {
     if (approvalId) await prisma.contentApproval.deleteMany({ where: { id: approvalId } });
     if (draftId) await prisma.contentDraft.deleteMany({ where: { id: draftId } });
     if (userId) await prisma.user.delete({ where: { id: userId } });
+    if (otherUserId) await prisma.user.delete({ where: { id: otherUserId } });
     await prisma.$disconnect();
   });
 
@@ -50,5 +57,13 @@ suite('Phase 1 database constraints', () => {
 
   it('prevents deleting an actor while audit evidence references it', async () => {
     await expect(prisma.user.delete({ where: { id: userId } })).rejects.toMatchObject({ code: 'P2003' });
+  });
+
+  it('prevents cross-user agent artifacts from referencing drafts or revisions', async () => {
+    const otherDraft = await prisma.contentDraft.create({ data: { userId: otherUserId, title: 'Other', topic: 'Other', body: 'Other' } });
+    const otherRevision = await prisma.contentRevision.create({ data: { draftId: otherDraft.id, userId: otherUserId, version: 1, body: otherDraft.body, changeType: 'test' } });
+    await expect(prisma.agentArtifact.create({ data: { userId, runId, artifactType: 'test', draftId: otherDraft.id } })).rejects.toMatchObject({ code: 'P2003' });
+    await expect(prisma.agentArtifact.create({ data: { userId, runId, artifactType: 'test', revisionId: otherRevision.id } })).rejects.toMatchObject({ code: 'P2003' });
+    await prisma.contentDraft.delete({ where: { id: otherDraft.id } });
   });
 });

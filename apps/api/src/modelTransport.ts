@@ -1,5 +1,6 @@
 import { AIError } from './aiErrors.js';
 import type { ModelPricing } from './aiConfig.js';
+import type { AIConfig } from './aiConfig.js';
 
 export type ModelTransportRequest = { model: string; systemInstruction: string; userInput: string; schemaName: string; jsonSchema: Record<string, unknown>; maxOutputTokens: number; signal: AbortSignal };
 export type ModelTransportResponse = { outputText: string; usage: { inputTokens?: number | undefined; outputTokens?: number | undefined; totalTokens?: number | undefined }; providerRequestId?: string | undefined };
@@ -29,7 +30,7 @@ export class OpenAIResponsesTransport implements ModelTransport {
       throw new AIError(category, 'The model provider rejected the request.', { retryable: category === 'rate_limit' || category === 'provider_unavailable' });
     }
     const outputText = extractOutputText(body);
-    if (!outputText) throw new AIError('safety/policy', 'The model provider returned no usable output.');
+    if (!outputText) throw new AIError('invalid_output', 'The model provider returned no usable structured output.');
     const usage = typeof body === 'object' && body !== null && 'usage' in body && typeof body.usage === 'object' && body.usage !== null ? body.usage as Record<string, unknown> : {};
     return { outputText, usage: { inputTokens: numberValue(usage.input_tokens), outputTokens: numberValue(usage.output_tokens), totalTokens: numberValue(usage.total_tokens) }, providerRequestId: typeof body === 'object' && body !== null && 'id' in body && typeof body.id === 'string' ? body.id : undefined };
   }
@@ -54,3 +55,8 @@ export class FakeModelTransport implements ModelTransport {
 }
 
 export function pricingForModel(pricing: Record<string, ModelPricing>, model: string) { return pricing[model]; }
+
+export function createModelTransport(config: AIConfig): ModelTransport {
+  if (config.provider === 'openai') return new OpenAIResponsesTransport(config);
+  throw new AIError('configuration', 'The configured model provider is not supported.');
+}

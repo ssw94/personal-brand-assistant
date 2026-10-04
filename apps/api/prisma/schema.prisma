@@ -32,6 +32,7 @@ model User {
   idempotencyRecords  IdempotencyRecord[]
   agentRuns           AgentRun[]
   agentArtifacts      AgentArtifact[]
+  contentRevisions    ContentRevision[]
 }
 
 model Profile {
@@ -361,6 +362,7 @@ model ContentDraft {
   approvals      ContentApproval[]
   agentArtifacts AgentArtifact[]
 
+  @@unique([id, userId])
   @@index([userId, status, updatedAt])
   @@index([userId, scheduledAt])
   @@index([sourceIdeaId])
@@ -369,7 +371,9 @@ model ContentDraft {
 model ContentRevision {
   id             String            @id @default(cuid())
   draftId        String
-  draft          ContentDraft      @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  draft          ContentDraft      @relation(fields: [draftId, userId], references: [id, userId], onDelete: Cascade)
   version        Int
   body           String
   changeType     String
@@ -378,6 +382,7 @@ model ContentRevision {
   agentArtifacts AgentArtifact[]
 
   @@unique([draftId, version])
+  @@unique([id, userId])
   @@index([draftId, createdAt])
 }
 
@@ -437,6 +442,8 @@ model AgentRun {
   promptVersion    Int
   correlationId    String?
   idempotencyKey   String?
+  schemaName       String
+  schemaVersion    Int
   inputTokenCount  Int?
   outputTokenCount Int?
   totalTokenCount  Int?
@@ -448,6 +455,8 @@ model AgentRun {
   startedAt        DateTime?
   completedAt      DateTime?
   cancelledAt      DateTime?
+  heartbeatAt      DateTime?
+  leaseExpiresAt   DateTime?
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   artifacts        AgentArtifact[]
@@ -468,9 +477,9 @@ model AgentArtifact {
   artifactType String
   payload      Json?
   draftId      String?
-  draft        ContentDraft?    @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  draft        ContentDraft?    @relation(fields: [draftId, userId], references: [id, userId], onDelete: Restrict)
   revisionId   String?
-  revision     ContentRevision? @relation(fields: [revisionId], references: [id], onDelete: SetNull)
+  revision     ContentRevision? @relation(fields: [revisionId, userId], references: [id, userId], onDelete: Restrict)
   createdAt    DateTime         @default(now())
 
   @@index([userId, artifactType, createdAt])
@@ -483,7 +492,8 @@ model PromptVersion {
   id             String   @id @default(cuid())
   identifier     String
   version        Int
-  schemaName     String?
+  schemaName     String
+  schemaVersion  Int
   templateDigest String
   description    String?
   createdAt      DateTime @default(now())

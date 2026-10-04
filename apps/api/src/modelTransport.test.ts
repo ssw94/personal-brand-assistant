@@ -23,4 +23,9 @@ describe('OpenAI Responses transport', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { message: 'secret provider detail' } }), { status: 429 })));
     await expect(new OpenAIResponsesTransport({ apiKey: 'server-only', baseUrl: 'https://api.openai.com/v1' }).complete(request)).rejects.toMatchObject({ category: 'rate_limit', retryable: true, message: 'The model provider rejected the request.' });
   });
+
+  it('classifies successful responses without structured output as invalid output', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ id: 'resp-2', output: [] }), { status: 200 })));
+    await expect(new OpenAIResponsesTransport({ apiKey: 'server-only', baseUrl: 'https://api.openai.com/v1' }).complete(request)).rejects.toMatchObject({ category: 'invalid_output', retryable: false });
+  });
 });
