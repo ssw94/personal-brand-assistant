@@ -238,12 +238,31 @@ export const idSchema = z.string().trim().min(1).max(200);
 export const ownershipRefSchema = z.object({ userId: idSchema });
 export const approvalDecisionSchema = z.enum(['APPROVED', 'REJECTED', 'REQUEST_CHANGES']);
 export const approvalAuditSchema = z.object({ ownerUserId: idSchema, actorUserId: idSchema, draftId: idSchema, revisionId: idSchema, decision: approvalDecisionSchema, reason: z.string().trim().max(2000).nullable().default(null), correlationId: idSchema.nullable().default(null) });
-export const auditEventSchema = z.object({ ownerUserId: idSchema, actorUserId: idSchema, resourceType: z.string().trim().min(1).max(80), resourceId: idSchema, action: z.string().trim().min(1).max(120), result: z.string().trim().min(1).max(80), reason: z.string().trim().max(2000).nullable().default(null), metadata: z.record(z.string(), z.unknown()).nullable().default(null), correlationId: idSchema.nullable().default(null) }).superRefine((event, ctx) => {
-  const sensitiveKey = Object.keys(event.metadata ?? {}).find((key) => /(token|secret|password|authorization|credential|private.?key|api.?key)/i.test(key));
-  if (sensitiveKey) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['metadata', sensitiveKey], message: 'Sensitive credentials must not be written to audit metadata.' });
+const sensitiveAuditKey = /(token|secret|password|authorization|credential|private.?key|api.?key)/i;
+function findSensitiveAuditKey(value: unknown, path: string[] = []): string[] | null {
+  if (!value || typeof value !== 'object') return null;
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) { const found = findSensitiveAuditKey(item, [...path, String(index)]); if (found) return found; }
+    return null;
+  }
+  for (const [key, item] of Object.entries(value)) {
+    if (sensitiveAuditKey.test(key)) return [...path, key];
+    const found = findSensitiveAuditKey(item, [...path, key]);
+    if (found) return found;
+  }
+  return null;
+}
+export const auditMetadataSchema = z.record(z.string().trim().min(1).max(80), z.unknown()).nullable().default(null).superRefine((metadata, ctx) => {
+  if (metadata === null) return;
+  const sensitivePath = findSensitiveAuditKey(metadata);
+  if (sensitivePath) ctx.addIssue({ code: z.ZodIssueCode.custom, path: sensitivePath, message: 'Sensitive credentials must not be written to audit metadata.' });
+  let serialized: string;
+  try { serialized = JSON.stringify(metadata); } catch { ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Audit metadata must be JSON serializable.' }); return; }
+  if (serialized.length > 16_384) ctx.addIssue({ code: z.ZodIssueCode.too_big, maximum: 16_384, type: 'string', inclusive: true, message: 'Audit metadata is too large.' });
 });
+export const auditEventSchema = z.object({ ownerUserId: idSchema, actorUserId: idSchema, resourceType: z.string().trim().min(1).max(80), resourceId: idSchema, action: z.string().trim().min(1).max(120), result: z.string().trim().min(1).max(80), reason: z.string().trim().max(2000).nullable().default(null), metadata: auditMetadataSchema, correlationId: idSchema.nullable().default(null) });
 export const idempotencyKeySchema = z.string().trim().min(8).max(200);
-export const idempotencyRequestSchema = z.object({ userId: idSchema, key: idempotencyKeySchema, operation: z.string().trim().min(1).max(120), payload: z.unknown() });
+export const idempotencyRequestSchema = z.object({ key: idempotencyKeySchema, operation: z.string().trim().min(1).max(120), payload: z.unknown() });
 export const idempotencyRecordSchema = z.object({ id: idSchema, userId: idSchema, key: idempotencyKeySchema, operation: z.string(), requestHash: z.string().length(64), status: z.enum(['IN_PROGRESS', 'COMPLETED', 'FAILED']), responseStatus: z.number().int().nullable(), responseBody: z.unknown().nullable(), resourceId: idSchema.nullable(), errorCode: z.string().nullable(), createdAt: dateSchema, updatedAt: dateSchema, expiresAt: dateSchema.nullable() });
 export const apiErrorSchema = z.object({ error: z.string(), code: z.string().optional(), requestId: z.string().optional() });
 export const contentIdeaStatusSchema = z.enum(['BACKLOG', 'PLANNED', 'USED']);

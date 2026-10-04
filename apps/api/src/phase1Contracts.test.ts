@@ -9,6 +9,8 @@ describe('Phase 1 shared contracts', () => {
 
   it('rejects credentials in audit metadata', () => {
     expect(auditEventSchema.safeParse({ ownerUserId: 'u1', actorUserId: 'u1', resourceType: 'ContentDraft', resourceId: 'd1', action: 'read', result: 'success', metadata: { accessToken: 'redacted' } }).success).toBe(false);
+    expect(auditEventSchema.safeParse({ ownerUserId: 'u1', actorUserId: 'u1', resourceType: 'ContentDraft', resourceId: 'd1', action: 'read', result: 'success', metadata: { provider: { accessToken: 'redacted' } } }).success).toBe(false);
+    expect(auditEventSchema.safeParse({ ownerUserId: 'u1', actorUserId: 'u1', resourceType: 'ContentDraft', resourceId: 'd1', action: 'read', result: 'success', metadata: { detail: 'x'.repeat(16_385) } }).success).toBe(false);
   });
 
   it('validates idempotency keys and stable API errors', () => {

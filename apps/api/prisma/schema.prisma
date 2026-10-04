@@ -403,7 +403,7 @@ enum IdempotencyStatus {
 model AuditEvent {
   id            String   @id @default(cuid())
   ownerUserId   String
-  ownerUser     User     @relation("AuditEventOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  ownerUser     User     @relation("AuditEventOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
   actorUserId   String
   actorUser     User     @relation("AuditEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
   resourceType  String
@@ -423,11 +423,11 @@ model AuditEvent {
 model ContentApproval {
   id          String           @id @default(cuid())
   ownerUserId String
-  ownerUser   User             @relation("ContentApprovalOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  ownerUser   User             @relation("ContentApprovalOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
   actorUserId String
   actorUser   User             @relation("ContentApprovalActor", fields: [actorUserId], references: [id], onDelete: Restrict)
   draftId     String
-  draft       ContentDraft     @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  draft       ContentDraft     @relation(fields: [draftId], references: [id], onDelete: Restrict)
   revisionId  String
   revision    ContentRevision  @relation(fields: [revisionId], references: [id], onDelete: Restrict)
   decision    ApprovalDecision

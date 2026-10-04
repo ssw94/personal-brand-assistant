@@ -17,5 +17,8 @@ describe('idempotency request hashing', () => {
     expect(classifyExistingIdempotency({ id: '1', requestHash: hash, status: 'COMPLETED', responseStatus: 201, responseBody: { id: 'draft-1' }, resourceId: 'draft-1', errorCode: null }, hash)).toBe('replay');
     expect(classifyExistingIdempotency({ id: '1', requestHash: hash, status: 'FAILED', responseStatus: 500, responseBody: null, resourceId: null, errorCode: 'FAILED' }, hash)).toBe('replay');
     expect(classifyExistingIdempotency({ id: '1', requestHash: hash, status: 'COMPLETED', responseStatus: 201, responseBody: null, resourceId: null, errorCode: null }, requestHash({ topic: 'security' }))).toBe('conflict');
+    expect(classifyExistingIdempotency({ id: '1', requestHash: hash, status: 'IN_PROGRESS', responseStatus: null, responseBody: null, resourceId: null, errorCode: null, expiresAt: new Date('2020-01-01') }, hash, new Date('2020-01-02'))).toBe('stale');
   });
+
+  it('rejects unstable undefined payloads', () => { expect(() => requestHash(undefined)).toThrow('JSON serializable'); });
 });

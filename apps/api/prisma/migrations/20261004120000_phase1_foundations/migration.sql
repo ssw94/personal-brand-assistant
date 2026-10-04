@@ -23,7 +23,7 @@ ALTER TABLE "ContentDraft"
 CREATE TABLE "AuditEvent" (
   "id" TEXT NOT NULL,
   "ownerUserId" TEXT NOT NULL,
-  "actorUserId" TEXT,
+  "actorUserId" TEXT NOT NULL,
   "resourceType" TEXT NOT NULL,
   "resourceId" TEXT NOT NULL,
   "action" TEXT NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE "IdempotencyRecord" (
 );
 
 CREATE INDEX "AuditEvent_ownerUserId_occurredAt_idx" ON "AuditEvent"("ownerUserId", "occurredAt");
-CREATE INDEX "AuditEvent_ownerUserId_resourceType_resourceId_idx" ON "AuditEvent"("ownerUserId", "resourceType", "resourceId");
+CREATE INDEX "AuditEvent_ownerUserId_resourceType_resourceId_occurredAt_idx" ON "AuditEvent"("ownerUserId", "resourceType", "resourceId", "occurredAt");
 CREATE INDEX "AuditEvent_actorUserId_occurredAt_idx" ON "AuditEvent"("actorUserId", "occurredAt");
 CREATE INDEX "ContentApproval_ownerUserId_createdAt_idx" ON "ContentApproval"("ownerUserId", "createdAt");
 CREATE INDEX "ContentApproval_draftId_createdAt_idx" ON "ContentApproval"("draftId", "createdAt");
@@ -74,10 +74,10 @@ CREATE UNIQUE INDEX "IdempotencyRecord_userId_key_operation_key" ON "Idempotency
 CREATE INDEX "IdempotencyRecord_userId_createdAt_idx" ON "IdempotencyRecord"("userId", "createdAt");
 CREATE INDEX "IdempotencyRecord_expiresAt_idx" ON "IdempotencyRecord"("expiresAt");
 
-ALTER TABLE "AuditEvent" ADD CONSTRAINT "AuditEvent_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "AuditEvent" ADD CONSTRAINT "AuditEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_draftId_fkey" FOREIGN KEY ("draftId") REFERENCES "ContentDraft"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_revisionId_fkey" FOREIGN KEY ("revisionId") REFERENCES "ContentRevision"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "AuditEvent" ADD CONSTRAINT "AuditEvent_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AuditEvent" ADD CONSTRAINT "AuditEvent_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_actorUserId_fkey" FOREIGN KEY ("actorUserId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_draftId_fkey" FOREIGN KEY ("draftId") REFERENCES "ContentDraft"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ContentApproval" ADD CONSTRAINT "ContentApproval_revisionId_fkey" FOREIGN KEY ("revisionId") REFERENCES "ContentRevision"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "IdempotencyRecord" ADD CONSTRAINT "IdempotencyRecord_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
