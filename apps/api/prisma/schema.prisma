@@ -8,23 +8,28 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  email         String          @unique
-  passwordHash   String          @default("")
-  plan           String          @default("FREE")
-  onboardingCompleted Boolean    @default(false)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  profile       Profile?
-  resumes       Resume[]
-  jobs          Job[]
-  applications  Application[]
-  conversations AIConversation[]
-  coverLetters   CoverLetter[]
-  contentStrategy ContentStrategy?
-  contentPillars  ContentPillar[]
-  contentIdeas    ContentIdea[]
-  contentDrafts   ContentDraft[]
+  id                  String              @id @default(cuid())
+  email               String              @unique
+  passwordHash        String              @default("")
+  plan                String              @default("FREE")
+  onboardingCompleted Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  profile             Profile?
+  resumes             Resume[]
+  jobs                Job[]
+  applications        Application[]
+  conversations       AIConversation[]
+  coverLetters        CoverLetter[]
+  contentStrategy     ContentStrategy?
+  contentPillars      ContentPillar[]
+  contentIdeas        ContentIdea[]
+  contentDrafts       ContentDraft[]
+  ownedAuditEvents    AuditEvent[]        @relation("AuditEventOwner")
+  actorAuditEvents    AuditEvent[]        @relation("AuditEventActor")
+  contentApprovals    ContentApproval[]   @relation("ContentApprovalOwner")
+  approvalActions     ContentApproval[]   @relation("ContentApprovalActor")
+  idempotencyRecords  IdempotencyRecord[]
 }
 
 model Profile {
@@ -59,6 +64,7 @@ model Experience {
   startDate   DateTime
   endDate     DateTime?
   description String?
+
   @@index([profileId, startDate])
 }
 
@@ -71,6 +77,7 @@ model Education {
   field       String?
   startDate   DateTime
   endDate     DateTime?
+
   @@index([profileId, startDate])
 }
 
@@ -81,6 +88,7 @@ model Skill {
   name       String
   level      String?
   technology Boolean @default(false)
+
   @@index([profileId, name])
 }
 
@@ -91,6 +99,7 @@ model Project {
   name        String
   description String?
   url         String?
+
   @@index([profileId])
 }
 
@@ -101,6 +110,7 @@ model Certification {
   name      String
   issuer    String?
   issuedAt  DateTime?
+
   @@index([profileId, issuedAt])
 }
 
@@ -110,29 +120,32 @@ model Achievement {
   profile     Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   title       String
   description String?
+
   @@index([profileId])
 }
 
 model Resume {
-  id        String          @id @default(cuid())
-  userId    String
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  versions  ResumeVersion[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id            String               @id @default(cuid())
+  userId        String
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  versions      ResumeVersion[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
   optimizations ResumeOptimization[]
+
   @@index([userId, updatedAt])
 }
 
 model ResumeVersion {
-  id        String   @id @default(cuid())
-  resumeId  String
-  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  version   Int
-  content   Json
-  createdAt DateTime @default(now())
+  id           String        @id @default(cuid())
+  resumeId     String
+  resume       Resume        @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  version      Int
+  content      Json
+  createdAt    DateTime      @default(now())
   applications Application[]
+
   @@unique([resumeId, version])
   @@index([resumeId, createdAt])
 }
@@ -146,63 +159,67 @@ model ResumeOptimization {
   suggestions    Json
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
   @@index([resumeId, updatedAt])
 }
 
 model Job {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company      String
-  title        String
-  location     String?
-  remoteStatus String?
-  url          String?
-  description  String?
-  skills       String[]      @default([])
-  experience   String?
-  salaryMin    Float?
-  salaryMax    Float?
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company        String
+  title          String
+  location       String?
+  remoteStatus   String?
+  url            String?
+  description    String?
+  skills         String[]      @default([])
+  experience     String?
+  salaryMin      Float?
+  salaryMax      Float?
   salaryCurrency String?
-  source       String?
+  source         String?
   applicationUrl String?
-  postedDate   DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  savedJob     SavedJob?
-  applications Application[]
+  postedDate     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  savedJob       SavedJob?
+  applications   Application[]
+
   @@index([userId, updatedAt])
   @@index([userId, title])
 }
 
 model SavedJob {
-  id      String   @id @default(cuid())
-  jobId   String   @unique
-  job     Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  savedAt DateTime @default(now())
-  notes   String?
-  priority String @default("medium")
+  id       String   @id @default(cuid())
+  jobId    String   @unique
+  job      Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  savedAt  DateTime @default(now())
+  notes    String?
+  priority String   @default("medium")
+
   @@index([priority, savedAt])
 }
 
 model Application {
-  id           String        @id @default(cuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobId        String
-  job          Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  status       String
-  appliedAt    DateTime?
+  id              String                     @id @default(cuid())
+  userId          String
+  user            User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId           String
+  job             Job                        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status          String
+  appliedAt       DateTime?
   resumeVersionId String?
-  resumeVersion ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
-  notes        String?
-  interviewDate DateTime?
-  followUpDate DateTime?
-  updatedAt DateTime @updatedAt
-  coverLetters CoverLetter[]
-  interviews   Interview[]
-  followUps    FollowUp[]
-  statusHistory ApplicationStatusHistory[]
+  resumeVersion   ResumeVersion?             @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+  notes           String?
+  interviewDate   DateTime?
+  followUpDate    DateTime?
+  updatedAt       DateTime                   @updatedAt
+  coverLetters    CoverLetter[]
+  interviews      Interview[]
+  followUps       FollowUp[]
+  statusHistory   ApplicationStatusHistory[]
+
   @@index([userId, updatedAt])
   @@index([userId, status])
   @@index([userId, followUpDate])
@@ -216,6 +233,7 @@ model ApplicationStatusHistory {
   fromStatus    String?
   toStatus      String
   changedAt     DateTime    @default(now())
+
   @@index([applicationId, changedAt])
 }
 
@@ -234,6 +252,7 @@ model CoverLetter {
   sourceFactIds  String[]     @default([])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
   @@index([userId, updatedAt])
   @@index([applicationId, createdAt])
 }
@@ -249,6 +268,7 @@ model Interview {
   answers       Json?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+
   @@index([applicationId, updatedAt])
 }
 
@@ -259,6 +279,7 @@ model FollowUp {
   dueAt         DateTime
   completedAt   DateTime?
   note          String
+
   @@index([applicationId, dueAt])
 }
 
@@ -270,6 +291,7 @@ model AIConversation {
   messages  Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@index([userId, updatedAt])
 }
 
@@ -293,68 +315,158 @@ model ContentPillar {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   ideas       ContentIdea[]
+
   @@index([userId, updatedAt])
 }
 
 model ContentIdea {
-  id        String        @id @default(cuid())
+  id        String         @id @default(cuid())
   userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   pillarId  String?
   pillar    ContentPillar? @relation(fields: [pillarId], references: [id], onDelete: SetNull)
   title     String
   prompt    String
-  status    String        @default("BACKLOG")
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  status    String         @default("BACKLOG")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
   drafts    ContentDraft[]
+
   @@index([userId, status, updatedAt])
   @@index([pillarId])
 }
 
 model ContentDraft {
-  id             String             @id @default(cuid())
-  userId         String
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sourceIdeaId   String?
-  sourceIdea     ContentIdea?       @relation(fields: [sourceIdeaId], references: [id], onDelete: SetNull)
-  title          String
-  topic          String
-  body           String
-  status         String             @default("DRAFT")
-  sourceFactIds  String[]           @default([])
-  failureReason  String?
-  reviewedAt     DateTime?
-  approvedAt     DateTime?
-  scheduledAt    DateTime?
-  publishedAt    DateTime?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  revisions      ContentRevision[]
-  critiques      ContentCritique[]
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceIdeaId  String?
+  sourceIdea    ContentIdea?       @relation(fields: [sourceIdeaId], references: [id], onDelete: SetNull)
+  title         String
+  topic         String
+  body          String
+  status        ContentDraftStatus @default(DRAFT)
+  sourceFactIds String[]           @default([])
+  failureReason String?
+  reviewedAt    DateTime?
+  approvedAt    DateTime?
+  scheduledAt   DateTime?
+  publishedAt   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  revisions     ContentRevision[]
+  critiques     ContentCritique[]
+  approvals     ContentApproval[]
+
   @@index([userId, status, updatedAt])
   @@index([userId, scheduledAt])
   @@index([sourceIdeaId])
 }
 
 model ContentRevision {
-  id        String       @id @default(cuid())
-  draftId   String
-  draft     ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
-  version   Int
-  body      String
+  id         String            @id @default(cuid())
+  draftId    String
+  draft      ContentDraft      @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  version    Int
+  body       String
   changeType String
-  createdAt DateTime     @default(now())
+  createdAt  DateTime          @default(now())
+  approvals  ContentApproval[]
+
   @@unique([draftId, version])
   @@index([draftId, createdAt])
 }
 
+enum ContentDraftStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  PUBLISH_FAILED
+  ARCHIVED
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+  REQUEST_CHANGES
+}
+
+enum IdempotencyStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model AuditEvent {
+  id            String   @id @default(cuid())
+  ownerUserId   String
+  ownerUser     User     @relation("AuditEventOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  actorUserId   String
+  actorUser     User     @relation("AuditEventActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  resourceType  String
+  resourceId    String
+  action        String
+  result        String
+  reason        String?
+  metadata      Json?
+  correlationId String?
+  occurredAt    DateTime @default(now())
+
+  @@index([ownerUserId, occurredAt])
+  @@index([ownerUserId, resourceType, resourceId, occurredAt])
+  @@index([actorUserId, occurredAt])
+}
+
+model ContentApproval {
+  id          String           @id @default(cuid())
+  ownerUserId String
+  ownerUser   User             @relation("ContentApprovalOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  actorUserId String
+  actorUser   User             @relation("ContentApprovalActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  draftId     String
+  draft       ContentDraft     @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  revisionId  String
+  revision    ContentRevision  @relation(fields: [revisionId], references: [id], onDelete: Restrict)
+  decision    ApprovalDecision
+  reason      String?
+  createdAt   DateTime         @default(now())
+
+  @@index([ownerUserId, createdAt])
+  @@index([draftId, createdAt])
+  @@index([revisionId])
+}
+
+model IdempotencyRecord {
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key            String
+  operation      String
+  requestHash    String
+  status         IdempotencyStatus @default(IN_PROGRESS)
+  responseStatus Int?
+  responseBody   Json?
+  resourceId     String?
+  errorCode      String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  expiresAt      DateTime?
+
+  @@unique([userId, key, operation])
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
 model ContentCritique {
-  id         String       @id @default(cuid())
-  draftId    String
-  draft      ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
-  provider   String
-  result     Json
-  createdAt  DateTime     @default(now())
+  id        String       @id @default(cuid())
+  draftId   String
+  draft     ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  provider  String
+  result    Json
+  createdAt DateTime     @default(now())
+
   @@index([draftId, createdAt])
 }

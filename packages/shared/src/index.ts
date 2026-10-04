@@ -232,7 +232,20 @@ export type AssistantMessage = z.infer<typeof assistantMessageSchema>;
 export type AssistantAsk = z.infer<typeof assistantAskSchema>;
 export type AssistantConversation = z.infer<typeof assistantConversationSchema>;
 
-export const contentStatusSchema = z.enum(['DRAFT', 'REVIEW', 'APPROVED', 'SCHEDULED', 'PUBLISHING', 'PUBLISHED', 'PUBLISH_FAILED']);
+export const contentStatusSchema = z.enum(['DRAFT', 'REVIEW', 'APPROVED', 'SCHEDULED', 'PUBLISHING', 'PUBLISHED', 'PUBLISH_FAILED', 'ARCHIVED']);
+export const contentLifecycleStateSchema = z.enum(['IDEA', 'DRAFT', 'REVIEW', 'APPROVED', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED']);
+export const idSchema = z.string().trim().min(1).max(200);
+export const ownershipRefSchema = z.object({ userId: idSchema });
+export const approvalDecisionSchema = z.enum(['APPROVED', 'REJECTED', 'REQUEST_CHANGES']);
+export const approvalAuditSchema = z.object({ ownerUserId: idSchema, actorUserId: idSchema, draftId: idSchema, revisionId: idSchema, decision: approvalDecisionSchema, reason: z.string().trim().max(2000).nullable().default(null), correlationId: idSchema.nullable().default(null) });
+export const auditEventSchema = z.object({ ownerUserId: idSchema, actorUserId: idSchema, resourceType: z.string().trim().min(1).max(80), resourceId: idSchema, action: z.string().trim().min(1).max(120), result: z.string().trim().min(1).max(80), reason: z.string().trim().max(2000).nullable().default(null), metadata: z.record(z.string(), z.unknown()).nullable().default(null), correlationId: idSchema.nullable().default(null) }).superRefine((event, ctx) => {
+  const sensitiveKey = Object.keys(event.metadata ?? {}).find((key) => /(token|secret|password|authorization|credential|private.?key|api.?key)/i.test(key));
+  if (sensitiveKey) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['metadata', sensitiveKey], message: 'Sensitive credentials must not be written to audit metadata.' });
+});
+export const idempotencyKeySchema = z.string().trim().min(8).max(200);
+export const idempotencyRequestSchema = z.object({ userId: idSchema, key: idempotencyKeySchema, operation: z.string().trim().min(1).max(120), payload: z.unknown() });
+export const idempotencyRecordSchema = z.object({ id: idSchema, userId: idSchema, key: idempotencyKeySchema, operation: z.string(), requestHash: z.string().length(64), status: z.enum(['IN_PROGRESS', 'COMPLETED', 'FAILED']), responseStatus: z.number().int().nullable(), responseBody: z.unknown().nullable(), resourceId: idSchema.nullable(), errorCode: z.string().nullable(), createdAt: dateSchema, updatedAt: dateSchema, expiresAt: dateSchema.nullable() });
+export const apiErrorSchema = z.object({ error: z.string(), code: z.string().optional(), requestId: z.string().optional() });
 export const contentIdeaStatusSchema = z.enum(['BACKLOG', 'PLANNED', 'USED']);
 export const contentStrategySchema = z.object({ targetAudience: z.string().trim().max(500), writingVoice: z.string().trim().max(500), postingFrequency: z.string().trim().max(120), recurringThemes: z.array(z.string().trim().min(1).max(120)).max(20) });
 export const contentPillarSchema = z.object({ name: z.string().trim().min(1).max(120), description: z.string().trim().max(500).default('') });
@@ -244,6 +257,13 @@ export const contentTransformSchema = z.object({ action: z.enum(['rewrite', 'imp
 export const contentCritiqueSchema = z.object({ provider: z.string(), summary: z.string(), strengths: z.array(z.string()), improvements: z.array(z.string()), factStatus: z.literal('critique_only') });
 export const contentDraftSchema = z.object({ id: z.string(), title: z.string(), topic: z.string(), body: z.string(), status: contentStatusSchema, sourceFactIds: z.array(z.string()), sourceIdeaId: z.string().nullable(), failureReason: z.string().nullable(), reviewedAt: dateSchema.nullable(), approvedAt: dateSchema.nullable(), scheduledAt: dateSchema.nullable(), publishedAt: dateSchema.nullable(), createdAt: dateSchema, updatedAt: dateSchema, revisions: z.array(z.object({ id: z.string(), version: z.number(), body: z.string(), changeType: z.string(), createdAt: dateSchema })), critiques: z.array(contentCritiqueSchema) });
 export type ContentStatus = z.infer<typeof contentStatusSchema>;
+export type ContentLifecycleState = z.infer<typeof contentLifecycleStateSchema>;
+export type ApprovalDecision = z.infer<typeof approvalDecisionSchema>;
+export type ApprovalAudit = z.infer<typeof approvalAuditSchema>;
+export type AuditEvent = z.infer<typeof auditEventSchema>;
+export type IdempotencyRequest = z.infer<typeof idempotencyRequestSchema>;
+export type IdempotencyRecord = z.infer<typeof idempotencyRecordSchema>;
+export type ApiError = z.infer<typeof apiErrorSchema>;
 export type ContentStrategy = z.infer<typeof contentStrategySchema>;
 export type ContentIdeaInput = z.infer<typeof contentIdeaSchema>;
 export type ContentDraft = z.infer<typeof contentDraftSchema>;
