@@ -43,7 +43,7 @@ The seed is based on Sachin Waghmare’s supplied resume and is idempotent. It f
 
 For local development without the account flow, set `VITE_USER_ID` and `VITE_USER_EMAIL` in `apps/web/.env`. The public sign-up/sign-in flow uses the API’s signed JWT session instead. Set `AUTH_JWT_SECRET` to a random value of at least 32 characters before using account authentication; never put it in a `VITE_*` variable.
 
-Local development accepts these identity headers only when `NODE_ENV` is not `production`. Production API requests must use a signed HS256 Bearer JWT with `sub` set to the user ID and an optional `email` claim. Set a strong `AUTH_JWT_SECRET` (and optionally `AUTH_JWT_ISSUER`) on the API host; never put it in a `VITE_*` variable. The frontend currently has no bundled authentication provider, so connect it to your organization’s OIDC/session layer before exposing it to users. Set `AUTH_ALLOW_IDENTITY_HEADERS=false` explicitly in all deployed environments.
+Local development accepts these identity headers only when `NODE_ENV` is not `production`. Production API requests use a signed HS256 session token delivered through the HttpOnly `pba_session` cookie (Bearer tokens remain supported for non-browser clients), with `sub` set to the user ID and an optional `email` claim. Set a strong `AUTH_JWT_SECRET` (and optionally `AUTH_JWT_ISSUER`) on the API host; never put it in a `VITE_*` variable. The browser API clients send credentials and do not require a frontend identity claim. Set `AUTH_ALLOW_IDENTITY_HEADERS=false` explicitly in all deployed environments.
 
 The Resume Builder uses the profile as its source of truth. Resume documents store only selected profile IDs, section visibility/order, and resume-specific summary text. Draft edits autosave to the current version; “Save version” creates an immutable numbered version. PDF export can be added later without changing this model.
 
@@ -69,7 +69,7 @@ Use Vercel’s GitHub integration for deployments; no Vercel token is required i
 2. Set the Vercel project **Root Directory** to `apps/web`.
 3. Keep the detected framework as **Vite**. The checked-in `apps/web/vercel.json` runs the workspace build from the repository root, outputs `dist`, and rewrites all SPA routes to `index.html`.
 4. Set `VITE_API_URL` in Vercel Environment Variables to the deployed backend API base URL, including `/api` (for example, `https://api.your-domain.com/api`). Do not put database URLs, provider keys, or other backend secrets in `VITE_*` variables.
-5. Set `VITE_USER_ID` and `VITE_USER_EMAIL` only if the current identity-header development flow is being used; replace that flow with authenticated identity before exposing the app broadly.
+5. Set `VITE_USER_ID` and `VITE_USER_EMAIL` only for local development identity headers; deployed browsers must authenticate through the HttpOnly session cookie.
 6. Set the Vercel **Production Branch** to `main`. GitHub integration will create production deployments from `main` and preview deployments for pull requests and other branches.
 7. Configure the API’s `WEB_ORIGINS` environment variable with the production Vercel URL and any preview URLs that should be allowed, comma-separated. For example: `https://your-app.vercel.app,https://your-preview-domain.vercel.app`.
 8. Configure the backend’s database and AI/provider variables on the backend host only. Vercel only needs the public `VITE_API_URL` and other explicitly client-safe values.

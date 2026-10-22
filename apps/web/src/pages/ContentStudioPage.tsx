@@ -60,13 +60,6 @@ export function ContentStudioPage() {
     void client.invalidateQueries({ queryKey: ['content-drafts'] });
     void client.invalidateQueries({ queryKey: ['content-ideas'] });
   };
-  if (!import.meta.env.VITE_USER_ID && !localStorage.getItem('pba.auth.token'))
-    return (
-      <EmptyState
-        title="Sign in to use Content Studio"
-        description="Create and review content from your authenticated workspace."
-      />
-    );
   if (drafts.isPending || ideas.isPending || pillars.isPending || strategy.isPending)
     return (
       <div aria-label="Loading content studio" className="card h-96 animate-pulse bg-slate-100" />

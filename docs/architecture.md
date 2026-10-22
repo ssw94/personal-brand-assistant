@@ -139,5 +139,5 @@ Use correlation IDs across HTTP request → agent run → job → provider attem
 - `SafeMockPublishingProvider` as a successful publishing path; it must never represent real LinkedIn publication.
 - Direct `publishDraft` request-time publishing with a durable publishing job/orchestrator.
 - Flat/string-only `User.plan` as billing authority with subscription/entitlement/usage services.
-- The current localStorage/dev-header production path with a secure browser session/OIDC integration before broad exposure.
+- The built-in browser path uses a secure HttpOnly session cookie; localStorage tokens and development identity headers are compatibility paths only. An external OIDC provider remains a deployment-specific decision, not a browser requirement in the current product scope.
 - Legacy page-local Tailwind/raw form controls where shared MUI components are required.

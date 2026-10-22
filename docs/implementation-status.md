@@ -27,7 +27,7 @@ This document records the current implementation state after the dependency-orde
 
 ## Remaining production gates
 
-1. Replace the development/localStorage identity path with the approved browser OIDC/session integration before broad exposure.
+1. Complete the deployment-specific identity-provider decision if external OIDC is required. The built-in browser path now uses an HttpOnly `pba_session` cookie; localStorage tokens and identity headers remain development-only compatibility paths.
 2. Run database-backed integration tests and migration rehearsal against disposable PostgreSQL in CI or the deployment environment.
 3. Execute a credentialed sandbox E2E run covering generate → critique → revise → approve → schedule/publish → provider metrics → insight feedback.
 4. Complete deployment-specific worker, alerting, secret rotation, retention, rollback, and provider capability runbooks.
