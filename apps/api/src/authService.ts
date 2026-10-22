@@ -64,7 +64,9 @@ export async function signup(input: unknown) {
   });
   if (existing) throw new EmailAlreadyUsedError();
   const user = await prisma.user.create({
-    data: { email: data.email, passwordHash: await hashPassword(data.password), plan: data.plan },
+    // The requested plan is display/checkout context only. Entitlements begin at FREE
+    // and can be upgraded only by a verified provider subscription event.
+    data: { email: data.email, passwordHash: await hashPassword(data.password), plan: 'FREE' },
   });
   return {
     token: token(user.id, user.email),
