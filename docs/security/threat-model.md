@@ -49,3 +49,12 @@ This threat model covers the target architecture. Current gaps are listed in [`d
 ## Incident handling
 
 Every provider failure and security-sensitive transition should have a correlation ID and redacted audit event. Support must be able to revoke LinkedIn connections, disable a provider, pause publishing jobs, invalidate sessions, and suspend an account's AI usage without editing production data manually.
+
+## Implemented controls in the current backend
+
+- Research URLs require an explicit server-side HTTPS host allowlist, reject credentials/custom ports/redirects, block private and loopback DNS results, cap response size, and classify prompt-injection-like source text.
+- Professional Memory candidates retain provenance and require explicit user review before entering verified context.
+- AI calls remain behind the provider-neutral ModelGateway with schema validation, retries, cancellation, usage tracking, and redacted failure handling.
+- LinkedIn tokens are encrypted at rest, OAuth state and PKCE verifier hashes are one-time and expiring, and publishing requires an approved latest revision plus a confirmed provider identifier.
+- Scheduled jobs use durable leases, owner-scoped records, idempotency keys, and bounded polling. Analytics stores only provider-labeled observations.
+- Stripe webhooks verify the raw request body and reject duplicate event IDs before applying approved plan mappings.
