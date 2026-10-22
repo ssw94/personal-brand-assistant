@@ -39,6 +39,10 @@ model User {
   writingStyleProfile  WritingStyleProfile?
   writingStyleExamples WritingStyleExample[]
   memoryFactVersions   MemoryFactVersion[]
+  researchRuns         ResearchRun[]
+  usagePeriods         UsagePeriod[]
+  usageReservations    UsageReservation[]
+  researchSources      ResearchSource[]
 }
 
 model Profile {
@@ -755,4 +759,121 @@ model ContentCritique {
   createdAt DateTime     @default(now())
 
   @@index([draftId, createdAt])
+}
+
+enum ResearchRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  UNAVAILABLE
+}
+
+enum ResearchSourceSafety {
+  UNCLASSIFIED
+  SAFE_DATA
+  PROMPT_INJECTION_SUSPECTED
+  BLOCKED
+}
+
+model ResearchRun {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query         String
+  status        ResearchRunStatus @default(QUEUED)
+  provider      String
+  failureReason String?
+  createdAt     DateTime          @default(now())
+  completedAt   DateTime?
+  updatedAt     DateTime          @updatedAt
+  sources       ResearchSource[]
+
+  @@unique([id, userId])
+  @@index([userId, status, createdAt])
+}
+
+model ResearchSource {
+  id             String               @id @default(cuid())
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runId          String
+  run            ResearchRun          @relation(fields: [runId, userId], references: [id, userId], onDelete: Cascade)
+  url            String
+  title          String?
+  contentHash    String
+  content        String?
+  fetchedAt      DateTime?
+  freshnessUntil DateTime?
+  safety         ResearchSourceSafety @default(UNCLASSIFIED)
+  citations      ResearchCitation[]
+  createdAt      DateTime             @default(now())
+
+  @@unique([id, userId])
+  @@unique([runId, url])
+  @@index([userId, createdAt])
+  @@index([userId, contentHash])
+}
+
+model ResearchCitation {
+  id        String         @id @default(cuid())
+  userId    String
+  sourceId  String
+  source    ResearchSource @relation(fields: [sourceId, userId], references: [id, userId], onDelete: Cascade)
+  claim     String
+  quote     String?
+  locator   String?
+  createdAt DateTime       @default(now())
+
+  @@index([userId, sourceId])
+}
+
+enum UsagePeriodStatus {
+  OPEN
+  CLOSED
+}
+
+model UsagePeriod {
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodStart   DateTime
+  periodEnd     DateTime
+  postLimit     Int?
+  reservedPosts Int                @default(0)
+  consumedPosts Int                @default(0)
+  status        UsagePeriodStatus  @default(OPEN)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  reservations  UsageReservation[]
+
+  @@unique([id, userId])
+  @@unique([userId, periodStart, periodEnd])
+  @@index([userId, status, periodEnd])
+}
+
+enum UsageReservationStatus {
+  RESERVED
+  CONSUMED
+  RELEASED
+  EXPIRED
+}
+
+model UsageReservation {
+  id             String                 @id @default(cuid())
+  userId         String
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  periodId       String
+  period         UsagePeriod            @relation(fields: [periodId, userId], references: [id, userId], onDelete: Cascade)
+  operation      String
+  idempotencyKey String
+  quantity       Int                    @default(1)
+  status         UsageReservationStatus @default(RESERVED)
+  createdAt      DateTime               @default(now())
+  consumedAt     DateTime?
+  releasedAt     DateTime?
+
+  @@unique([userId, operation, idempotencyKey])
+  @@index([userId, status, createdAt])
 }

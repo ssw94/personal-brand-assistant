@@ -33,11 +33,11 @@ export const navigationItems = [
 export type NavigationItem = (typeof navigationItems)[number];
 
 export const planCatalog = [
-  { id: 'FREE', name: 'Free', price: 0, period: 'forever', description: 'A focused starting point for building your professional foundation.', features: ['Professional profile', 'One resume', 'Manual job and application tracking', 'Limited AI preparation'], aiUsage: 'Limited', publishing: 'Not included', scheduling: 'Not included', team: false },
-  { id: 'CREATOR', name: 'Creator', price: 19, period: 'month', description: 'For professionals building a consistent, thoughtful presence.', features: ['Everything in Free', 'Content ideas and drafts', 'Content strategy and critique', 'Content calendar'], aiUsage: 'More AI usage', publishing: 'Not included', scheduling: 'Included', team: false },
-  { id: 'PRO', name: 'Pro', price: 39, period: 'month', description: 'For an active personal brand and career workflow.', features: ['Everything in Creator', 'Advanced resume and job workflows', 'Interview preparation', 'Publishing integrations when connected'], aiUsage: 'Expanded', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
-  { id: 'EXPERT', name: 'Expert', price: 79, period: 'month', description: 'For professionals who want the most room to work with AI.', features: ['Everything in Pro', 'Highest individual usage allowance', 'Priority workflow features'], aiUsage: 'Highest individual allowance', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
-  { id: 'TEAM', name: 'Team', price: 149, period: 'month', description: 'For small teams supporting professional content workflows.', features: ['Everything in Pro', 'Shared workspace controls', 'Team-oriented access'], aiUsage: 'Team allowance', publishing: 'Provider-dependent', scheduling: 'Included', team: true },
+  { id: 'FREE', name: 'Free', price: 0, currency: 'INR', period: 'month', monthlyPostLimit: 3, description: 'A focused starting point for building your professional foundation.', features: ['Professional profile', '3 posts per month'], aiUsage: 'Limited', publishing: 'Not included', scheduling: 'Not included', team: false },
+  { id: 'CREATOR', name: 'Creator', price: 499, currency: 'INR', period: 'month', monthlyPostLimit: 15, description: 'For professionals building a consistent, thoughtful presence.', features: ['Everything in Free', '15 posts per month'], aiUsage: 'Included', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
+  { id: 'PRO', name: 'Pro', price: 999, currency: 'INR', period: 'month', monthlyPostLimit: 30, description: 'For an active personal brand and career workflow.', features: ['Everything in Creator', '30 posts per month'], aiUsage: 'Included', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
+  { id: 'EXPERT', name: 'Expert', price: 1999, currency: 'INR', period: 'month', monthlyPostLimit: 60, description: 'For professionals who want the most room to work with AI.', features: ['Everything in Pro', '60 posts per month'], aiUsage: 'Included', publishing: 'Provider-dependent', scheduling: 'Included', team: false },
+  { id: 'TEAM', name: 'Team', price: null, currency: 'INR', period: 'month', monthlyPostLimit: null, description: 'For teams with custom usage requirements.', features: ['Everything in Pro', 'Custom usage'], aiUsage: 'Custom', publishing: 'Provider-dependent', scheduling: 'Included', team: true },
 ] as const;
 export type PlanId = (typeof planCatalog)[number]['id'];
 
@@ -327,3 +327,21 @@ export type WritingStyleExampleCreate = z.infer<typeof writingStyleExampleCreate
 export type WritingStyleExampleUpdate = z.infer<typeof writingStyleExampleUpdateSchema>;
 export type StyleAnalysisRequest = z.infer<typeof styleAnalysisRequestSchema>;
 export type StyleAnalysisResult = z.infer<typeof styleAnalysisResultSchema>;
+
+export const researchRunStatusSchema = z.enum(['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED', 'UNAVAILABLE']);
+export const researchSourceSafetySchema = z.enum(['UNCLASSIFIED', 'SAFE_DATA', 'PROMPT_INJECTION_SUSPECTED', 'BLOCKED']);
+export const researchCitationSchema = z.object({ id: idSchema, sourceId: idSchema, claim: z.string().min(1).max(2000), quote: z.string().max(1000).nullable(), locator: z.string().max(500).nullable(), createdAt: dateSchema }).strict();
+export const researchSourceSchema = z.object({ id: idSchema, runId: idSchema, url: z.string().url(), title: z.string().nullable(), contentHash: z.string().length(64), fetchedAt: dateSchema.nullable(), freshnessUntil: dateSchema.nullable(), safety: researchSourceSafetySchema, citations: z.array(researchCitationSchema).max(100), createdAt: dateSchema }).strict();
+export const researchRunSchema = z.object({ id: idSchema, query: z.string().min(1).max(500), status: researchRunStatusSchema, provider: z.string().min(1).max(80), failureReason: z.string().nullable(), createdAt: dateSchema, completedAt: dateSchema.nullable(), updatedAt: dateSchema, sources: z.array(researchSourceSchema).max(50) }).strict();
+export const researchRequestSchema = z.object({ query: z.string().trim().min(3).max(500), urls: z.array(z.string().url()).max(10).default([]) }).strict();
+export const researchCitationInputSchema = z.object({ claim: z.string().trim().min(1).max(2000), quote: z.string().trim().max(1000).nullable().default(null), locator: z.string().trim().max(500).nullable().default(null) }).strict();
+export const researchResultSchema = z.object({ title: z.string().max(300).nullable(), content: z.string().max(20000), citations: z.array(researchCitationInputSchema).max(100) }).strict();
+export type ResearchRunStatus = z.infer<typeof researchRunStatusSchema>;
+export type ResearchSourceSafety = z.infer<typeof researchSourceSafetySchema>;
+export type ResearchRequest = z.infer<typeof researchRequestSchema>;
+export type ResearchRun = z.infer<typeof researchRunSchema>;
+
+export const usageReservationStatusSchema = z.enum(['RESERVED', 'CONSUMED', 'RELEASED', 'EXPIRED']);
+export const usageSummarySchema = z.object({ plan: z.string(), periodStart: dateSchema, periodEnd: dateSchema, limit: z.number().int().nonnegative().nullable(), reserved: z.number().int().nonnegative(), consumed: z.number().int().nonnegative(), remaining: z.number().int().nonnegative().nullable() }).strict();
+export const usageReservationSchema = z.object({ id: idSchema, operation: z.string(), quantity: z.number().int().positive(), status: usageReservationStatusSchema, createdAt: dateSchema }).strict();
+export type UsageSummary = z.infer<typeof usageSummarySchema>;
