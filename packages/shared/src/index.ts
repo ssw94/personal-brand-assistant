@@ -17,6 +17,8 @@ export const navigationItems = [
   { label: 'Application package', path: '/application-package', icon: 'package-check' },
   { label: 'Interview prep', path: '/interview-preparation', icon: 'message-circle-question' },
   { label: 'Career assistant', path: '/career-assistant', icon: 'bot' },
+  { label: 'Professional Memory', path: '/memory', icon: 'brain' },
+  { label: 'Topic Lab', path: '/topics', icon: 'sparkles' },
   { label: 'Content Studio', path: '/content', icon: 'pen-line' },
   { label: 'Ideas', path: '/content/ideas', icon: 'lightbulb' },
   { label: 'Content Calendar', path: '/content/calendar', icon: 'calendar-days' },
@@ -26,6 +28,7 @@ export const navigationItems = [
   { label: 'Content Strategy', path: '/content/strategy', icon: 'target' },
   { label: 'LinkedIn Connection', path: '/linkedin', icon: 'linkedin' },
   { label: 'Publishing History', path: '/linkedin/history', icon: 'history' },
+  { label: 'Analytics', path: '/analytics', icon: 'chart' },
   { label: 'Billing', path: '/billing', icon: 'credit-card' },
   { label: 'Settings', path: '/settings', icon: 'settings' },
 ] as const;
