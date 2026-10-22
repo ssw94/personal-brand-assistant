@@ -19,8 +19,8 @@ export async function startLinkedInOAuth(userId: string) {
   return { authorizationUrl: url.toString(), state, codeVerifier };
 }
 
-export async function completeLinkedInOAuth(input: { state: string; code: string; codeVerifier: string }) {
-  const settings = config(); const state = await prisma.oAuthState.findFirst({ where: { provider: 'linkedin', stateHash: hash(input.state), consumedAt: null, expiresAt: { gt: new Date() } } }); if (!state || hash(input.codeVerifier) !== state.codeVerifierHash) throw new LinkedInOAuthError('Invalid or expired LinkedIn OAuth state.'); const userId = state.userId;
+export async function completeLinkedInOAuth(userId: string, input: { state: string; code: string; codeVerifier: string }) {
+  const settings = config(); const state = await prisma.oAuthState.findFirst({ where: { userId, provider: 'linkedin', stateHash: hash(input.state), consumedAt: null, expiresAt: { gt: new Date() } } }); if (!state || hash(input.codeVerifier) !== state.codeVerifierHash) throw new LinkedInOAuthError('Invalid or expired LinkedIn OAuth state.');
   const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', code: input.code, client_id: settings.clientId, client_secret: settings.clientSecret, redirect_uri: state.redirectUri }) });
   if (!tokenResponse.ok) throw new LinkedInOAuthError('LinkedIn token exchange failed.'); const token = await tokenResponse.json() as { access_token?: string; expires_in?: number; scope?: string }; if (!token.access_token) throw new LinkedInOAuthError('LinkedIn did not return an access token.');
   const profileResponse = await fetch(`${settings.apiBase}/v2/userinfo`, { headers: { authorization: `Bearer ${token.access_token}` } }); if (!profileResponse.ok) throw new LinkedInOAuthError('LinkedIn profile lookup failed.'); const profile = await profileResponse.json() as { sub?: string; name?: string }; if (!profile.sub) throw new LinkedInOAuthError('LinkedIn profile did not return a member identifier.');
