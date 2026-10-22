@@ -48,6 +48,9 @@ model User {
   linkedInAccounts     LinkedInAccount[]
   oauthStates          OAuthState[]
   publishedPosts       PublishedPost[]
+  publishingJobs       PublishingJob[]
+  analyticsEvents      AnalyticsEvent[]
+  postMetricSnapshots  PostMetricSnapshot[]
 }
 
 model Profile {
@@ -378,6 +381,7 @@ model ContentDraft {
   agentArtifacts AgentArtifact[]
   workflowRuns   WorkflowRun[]
   publishedPosts PublishedPost[]
+  publishingJobs PublishingJob[]
 
   @@unique([id, userId])
   @@index([userId, status, updatedAt])
@@ -982,6 +986,7 @@ model LinkedInAccount {
   disconnectedAt         DateTime?
   updatedAt              DateTime        @updatedAt
   publishedPosts         PublishedPost[]
+  publishingJobs         PublishingJob[]
 
   @@unique([id, userId])
   @@unique([userId, providerMemberId])
@@ -1005,19 +1010,21 @@ model OAuthState {
 }
 
 model PublishedPost {
-  id             String              @id @default(cuid())
-  userId         String
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accountId      String
-  account        LinkedInAccount     @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
-  draftId        String
-  draft          ContentDraft        @relation(fields: [draftId, userId], references: [id, userId], onDelete: Restrict)
-  revisionId     String
-  providerPostId String
-  status         String              @default("CONFIRMED")
-  publishedAt    DateTime
-  createdAt      DateTime            @default(now())
-  attempts       PublishingAttempt[]
+  id              String               @id @default(cuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId       String
+  account         LinkedInAccount      @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
+  draftId         String
+  draft           ContentDraft         @relation(fields: [draftId, userId], references: [id, userId], onDelete: Restrict)
+  revisionId      String
+  providerPostId  String
+  status          String               @default("CONFIRMED")
+  publishedAt     DateTime
+  createdAt       DateTime             @default(now())
+  attempts        PublishingAttempt[]
+  analyticsEvents AnalyticsEvent[]
+  metricSnapshots PostMetricSnapshot[]
 
   @@unique([id, userId])
   @@unique([userId, providerPostId])
@@ -1039,4 +1046,84 @@ model PublishingAttempt {
   createdAt       DateTime       @default(now())
 
   @@index([userId, draftId, createdAt])
+}
+
+enum PublishingJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model PublishingJob {
+  id             String                 @id @default(cuid())
+  userId         String
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  draftId        String
+  draft          ContentDraft           @relation(fields: [draftId, userId], references: [id, userId], onDelete: Restrict)
+  revisionId     String
+  accountId      String
+  account        LinkedInAccount        @relation(fields: [accountId, userId], references: [id, userId], onDelete: Restrict)
+  scheduledAt    DateTime
+  timezone       String
+  status         PublishingJobStatus    @default(QUEUED)
+  idempotencyKey String
+  leaseUntil     DateTime?
+  attemptCount   Int                    @default(0)
+  lastError      String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  attempts       PublishingJobAttempt[]
+
+  @@unique([userId, idempotencyKey])
+  @@unique([id, userId])
+  @@index([userId, status, scheduledAt])
+}
+
+model PublishingJobAttempt {
+  id          String        @id @default(cuid())
+  userId      String
+  jobId       String
+  job         PublishingJob @relation(fields: [jobId, userId], references: [id, userId], onDelete: Cascade)
+  status      String
+  error       String?
+  createdAt   DateTime      @default(now())
+  completedAt DateTime?
+
+  @@index([userId, jobId, createdAt])
+}
+
+model AnalyticsEvent {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishedPostId String?
+  publishedPost   PublishedPost? @relation(fields: [publishedPostId, userId], references: [id, userId], onDelete: Restrict)
+  provider        String
+  providerEventId String
+  eventType       String
+  occurredAt      DateTime
+  payload         Json
+  createdAt       DateTime       @default(now())
+
+  @@unique([userId, providerEventId])
+  @@index([userId, eventType, occurredAt])
+}
+
+model PostMetricSnapshot {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publishedPostId String
+  publishedPost   PublishedPost @relation(fields: [publishedPostId, userId], references: [id, userId], onDelete: Cascade)
+  metricName      String
+  value           Float
+  observedAt      DateTime
+  provider        String
+  capability      String
+  createdAt       DateTime      @default(now())
+
+  @@unique([userId, publishedPostId, metricName, observedAt])
+  @@index([userId, metricName, observedAt])
 }

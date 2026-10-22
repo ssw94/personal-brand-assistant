@@ -364,3 +364,9 @@ export type WriterRequest = z.infer<typeof writerRequestSchema>;
 export type WriterResult = z.infer<typeof writerResultSchema>;
 export type CriticResult = z.infer<typeof criticResultSchema>;
 export type RevisionResult = z.infer<typeof revisionResultSchema>;
+
+export const publishingJobStatusSchema = z.enum(['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED']);
+export const scheduleRequestSchema = z.object({ draftId: idSchema, accountId: idSchema, revisionId: idSchema, scheduledAt: dateSchema, timezone: z.string().trim().min(1).max(80), idempotencyKey: idempotencyKeySchema }).strict();
+export const analyticsEventInputSchema = z.object({ publishedPostId: idSchema.nullable().default(null), provider: z.string().trim().min(1).max(80), providerEventId: z.string().trim().min(1).max(240), eventType: z.string().trim().min(1).max(120), occurredAt: dateSchema, payload: z.record(z.unknown()) }).strict();
+export const metricSnapshotInputSchema = z.object({ publishedPostId: idSchema, metricName: z.string().trim().min(1).max(80), value: z.number().finite().nonnegative(), observedAt: dateSchema, provider: z.string().trim().min(1).max(80), capability: z.string().trim().min(1).max(120) }).strict();
+export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
