@@ -353,3 +353,14 @@ export const topicGenerationResultSchema = z.object({ candidates: z.array(z.obje
 export const topicReviewSchema = z.object({ decision: z.enum(['SELECTED', 'REJECTED']), reason: z.string().trim().max(1000).nullable().default(null) }).strict();
 export type TopicCandidate = z.infer<typeof topicCandidateSchema>;
 export type TopicGenerationRequest = z.infer<typeof topicGenerationRequestSchema>;
+
+export const writerRequestSchema = z.object({ topicCandidateId: idSchema, title: z.string().trim().max(180).default('LinkedIn draft') }).strict();
+export const writerResultSchema = z.object({ title: z.string().trim().min(1).max(180), body: z.string().trim().min(1).max(3000), sourceFactIds: z.array(idSchema).max(50), sourceResearchIds: z.array(idSchema).max(50) }).strict();
+export const criticRequestSchema = z.object({ draftId: idSchema }).strict();
+export const criticResultSchema = z.object({ summary: z.string().min(1).max(2000), strengths: z.array(z.string().max(500)).max(20), improvements: z.array(z.string().max(1000)).max(20), unsupportedClaims: z.array(z.string().max(1000)).max(20), score: z.number().min(0).max(100) }).strict();
+export const revisionRequestSchema = z.object({ draftId: idSchema, critiqueId: idSchema.nullable().default(null), instructions: z.string().trim().max(2000).default('') }).strict();
+export const revisionResultSchema = z.object({ body: z.string().trim().min(1).max(3000), preservedFactIds: z.array(idSchema).max(50) }).strict();
+export type WriterRequest = z.infer<typeof writerRequestSchema>;
+export type WriterResult = z.infer<typeof writerResultSchema>;
+export type CriticResult = z.infer<typeof criticResultSchema>;
+export type RevisionResult = z.infer<typeof revisionResultSchema>;
