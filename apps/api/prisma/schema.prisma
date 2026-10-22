@@ -42,6 +42,7 @@ model User {
   researchRuns         ResearchRun[]
   usagePeriods         UsagePeriod[]
   usageReservations    UsageReservation[]
+  topicCandidates      TopicCandidate[]
   researchSources      ResearchSource[]
 }
 
@@ -472,6 +473,7 @@ model AgentRun {
   artifacts            AgentArtifact[]
   usages               ModelUsage[]
   writingStyleProfiles WritingStyleProfile[]
+  topicCandidates      TopicCandidate[]
 
   @@unique([id, userId])
   @@index([userId, status, createdAt])
@@ -876,4 +878,33 @@ model UsageReservation {
 
   @@unique([userId, operation, idempotencyKey])
   @@index([userId, status, createdAt])
+}
+
+enum TopicCandidateStatus {
+  CANDIDATE
+  SELECTED
+  REJECTED
+  EXPIRED
+}
+
+model TopicCandidate {
+  id                String               @id @default(cuid())
+  userId            String
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  runId             String
+  run               AgentRun             @relation(fields: [runId, userId], references: [id, userId], onDelete: Cascade)
+  title             String
+  angle             String
+  rationale         String
+  noveltyKey        String
+  memoryFactIds     String[]             @default([])
+  researchSourceIds String[]             @default([])
+  status            TopicCandidateStatus @default(CANDIDATE)
+  reviewedAt        DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@unique([id, userId])
+  @@index([userId, status, createdAt])
+  @@index([userId, noveltyKey])
 }

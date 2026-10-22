@@ -345,3 +345,11 @@ export const usageReservationStatusSchema = z.enum(['RESERVED', 'CONSUMED', 'REL
 export const usageSummarySchema = z.object({ plan: z.string(), periodStart: dateSchema, periodEnd: dateSchema, limit: z.number().int().nonnegative().nullable(), reserved: z.number().int().nonnegative(), consumed: z.number().int().nonnegative(), remaining: z.number().int().nonnegative().nullable() }).strict();
 export const usageReservationSchema = z.object({ id: idSchema, operation: z.string(), quantity: z.number().int().positive(), status: usageReservationStatusSchema, createdAt: dateSchema }).strict();
 export type UsageSummary = z.infer<typeof usageSummarySchema>;
+
+export const topicCandidateStatusSchema = z.enum(['CANDIDATE', 'SELECTED', 'REJECTED', 'EXPIRED']);
+export const topicCandidateSchema = z.object({ id: idSchema, title: z.string().min(1).max(240), angle: z.string().min(1).max(1000), rationale: z.string().min(1).max(2000), noveltyKey: z.string().min(1).max(240), memoryFactIds: z.array(idSchema).max(50), researchSourceIds: z.array(idSchema).max(50), status: topicCandidateStatusSchema, reviewedAt: dateSchema.nullable(), createdAt: dateSchema, updatedAt: dateSchema }).strict();
+export const topicGenerationRequestSchema = z.object({ count: z.number().int().min(1).max(10).default(5), focus: z.string().trim().max(500).default('') }).strict();
+export const topicGenerationResultSchema = z.object({ candidates: z.array(z.object({ title: z.string().trim().min(1).max(240), angle: z.string().trim().min(1).max(1000), rationale: z.string().trim().min(1).max(2000), noveltyKey: z.string().trim().min(1).max(240), memoryFactIds: z.array(idSchema).max(50), researchSourceIds: z.array(idSchema).max(50) }).strict()).max(10) }).strict();
+export const topicReviewSchema = z.object({ decision: z.enum(['SELECTED', 'REJECTED']), reason: z.string().trim().max(1000).nullable().default(null) }).strict();
+export type TopicCandidate = z.infer<typeof topicCandidateSchema>;
+export type TopicGenerationRequest = z.infer<typeof topicGenerationRequestSchema>;
