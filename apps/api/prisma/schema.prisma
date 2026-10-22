@@ -8,31 +8,37 @@ datasource db {
 }
 
 model User {
-  id                  String              @id @default(cuid())
-  email               String              @unique
-  passwordHash        String              @default("")
-  plan                String              @default("FREE")
-  onboardingCompleted Boolean             @default(false)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  profile             Profile?
-  resumes             Resume[]
-  jobs                Job[]
-  applications        Application[]
-  conversations       AIConversation[]
-  coverLetters        CoverLetter[]
-  contentStrategy     ContentStrategy?
-  contentPillars      ContentPillar[]
-  contentIdeas        ContentIdea[]
-  contentDrafts       ContentDraft[]
-  ownedAuditEvents    AuditEvent[]        @relation("AuditEventOwner")
-  actorAuditEvents    AuditEvent[]        @relation("AuditEventActor")
-  contentApprovals    ContentApproval[]   @relation("ContentApprovalOwner")
-  approvalActions     ContentApproval[]   @relation("ContentApprovalActor")
-  idempotencyRecords  IdempotencyRecord[]
-  agentRuns           AgentRun[]
-  agentArtifacts      AgentArtifact[]
-  contentRevisions    ContentRevision[]
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  passwordHash         String                @default("")
+  plan                 String                @default("FREE")
+  onboardingCompleted  Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  profile              Profile?
+  resumes              Resume[]
+  jobs                 Job[]
+  applications         Application[]
+  conversations        AIConversation[]
+  coverLetters         CoverLetter[]
+  contentStrategy      ContentStrategy?
+  contentPillars       ContentPillar[]
+  contentIdeas         ContentIdea[]
+  contentDrafts        ContentDraft[]
+  ownedAuditEvents     AuditEvent[]          @relation("AuditEventOwner")
+  actorAuditEvents     AuditEvent[]          @relation("AuditEventActor")
+  contentApprovals     ContentApproval[]     @relation("ContentApprovalOwner")
+  approvalActions      ContentApproval[]     @relation("ContentApprovalActor")
+  idempotencyRecords   IdempotencyRecord[]
+  agentRuns            AgentRun[]
+  agentArtifacts       AgentArtifact[]
+  contentRevisions     ContentRevision[]
+  sourceDocuments      SourceDocument[]
+  memoryFacts          MemoryFact[]
+  memorySources        MemorySource[]
+  writingStyleProfile  WritingStyleProfile?
+  writingStyleExamples WritingStyleExample[]
+  memoryFactVersions   MemoryFactVersion[]
 }
 
 model Profile {
@@ -431,36 +437,37 @@ enum AgentFailureCategory {
 }
 
 model AgentRun {
-  id               String                @id @default(cuid())
-  userId           String
-  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  operation        String
-  status           AgentRunStatus        @default(QUEUED)
-  provider         String
-  model            String
-  promptIdentifier String
-  promptVersion    Int
-  correlationId    String?
-  idempotencyKey   String?
-  schemaName       String
-  schemaVersion    Int
-  inputTokenCount  Int?
-  outputTokenCount Int?
-  totalTokenCount  Int?
-  estimatedCost    Float?
-  costCurrency     String?
-  failureCategory  AgentFailureCategory?
-  failureMessage   String?
-  queuedAt         DateTime              @default(now())
-  startedAt        DateTime?
-  completedAt      DateTime?
-  cancelledAt      DateTime?
-  heartbeatAt      DateTime?
-  leaseExpiresAt   DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  artifacts        AgentArtifact[]
-  usages           ModelUsage[]
+  id                   String                @id @default(cuid())
+  userId               String
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operation            String
+  status               AgentRunStatus        @default(QUEUED)
+  provider             String
+  model                String
+  promptIdentifier     String
+  promptVersion        Int
+  correlationId        String?
+  idempotencyKey       String?
+  schemaName           String
+  schemaVersion        Int
+  inputTokenCount      Int?
+  outputTokenCount     Int?
+  totalTokenCount      Int?
+  estimatedCost        Float?
+  costCurrency         String?
+  failureCategory      AgentFailureCategory?
+  failureMessage       String?
+  queuedAt             DateTime              @default(now())
+  startedAt            DateTime?
+  completedAt          DateTime?
+  cancelledAt          DateTime?
+  heartbeatAt          DateTime?
+  leaseExpiresAt       DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  artifacts            AgentArtifact[]
+  usages               ModelUsage[]
+  writingStyleProfiles WritingStyleProfile[]
 
   @@unique([id, userId])
   @@index([userId, status, createdAt])
@@ -517,6 +524,166 @@ model ModelUsage {
 
   @@index([runId, createdAt])
   @@index([provider, model, createdAt])
+}
+
+enum MemoryFactType {
+  SUMMARY
+  EXPERIENCE
+  EDUCATION
+  SKILL
+  PROJECT
+  CERTIFICATION
+  ACHIEVEMENT
+  PREFERENCE
+  OTHER
+}
+
+enum MemoryReviewState {
+  CANDIDATE
+  VERIFIED
+  REJECTED
+  SUPERSEDED
+}
+
+enum MemorySourceType {
+  PROFILE
+  RESUME
+  PROJECT
+  USER_ENTERED
+  IMPORTED_DOCUMENT
+  AI_EXTRACTED_CANDIDATE
+}
+
+enum StyleExampleSourceType {
+  USER_ENTERED
+  CONTENT_DRAFT
+  IMPORTED_DOCUMENT
+}
+
+model SourceDocument {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceType    MemorySourceType
+  sourceRef     String?
+  title         String
+  contentHash   String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  memorySources MemorySource[]
+
+  @@unique([id, userId])
+  @@index([userId, sourceType, updatedAt])
+  @@index([userId, sourceRef])
+}
+
+model MemoryFact {
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  factType        MemoryFactType
+  category        String
+  normalizedValue String
+  canonicalKey    String?
+  confidence      Float?
+  reviewState     MemoryReviewState   @default(CANDIDATE)
+  version         Int                 @default(1)
+  verifiedAt      DateTime?
+  rejectedAt      DateTime?
+  supersededAt    DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  sources         MemorySource[]
+  versions        MemoryFactVersion[]
+
+  @@unique([id, userId])
+  @@index([userId, reviewState, updatedAt])
+  @@index([userId, factType, reviewState])
+  @@index([userId, canonicalKey])
+}
+
+model MemoryFactVersion {
+  id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  factId          String
+  fact            MemoryFact        @relation(fields: [factId, userId], references: [id, userId], onDelete: Cascade)
+  version         Int
+  factType        MemoryFactType
+  category        String
+  normalizedValue String
+  confidence      Float?
+  reviewState     MemoryReviewState
+  changeReason    String?
+  changedByUserId String?
+  createdAt       DateTime          @default(now())
+
+  @@unique([factId, version])
+  @@index([userId, factId, createdAt])
+}
+
+model MemorySource {
+  id                   String           @id @default(cuid())
+  userId               String
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  factId               String
+  fact                 MemoryFact       @relation(fields: [factId, userId], references: [id, userId], onDelete: Cascade)
+  sourceType           MemorySourceType
+  sourceRef            String?
+  sourceDocumentId     String?
+  sourceDocumentUserId String?
+  sourceDocument       SourceDocument?  @relation(fields: [sourceDocumentId, sourceDocumentUserId], references: [id, userId], onDelete: SetNull)
+  sourceLabel          String?
+  metadata             Json?
+  createdAt            DateTime         @default(now())
+
+  @@index([userId, factId, createdAt])
+  @@index([userId, sourceType, sourceRef])
+  @@index([sourceDocumentId])
+}
+
+model WritingStyleProfile {
+  id                     String            @id @default(cuid())
+  userId                 String            @unique
+  user                   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tone                   String?
+  sentenceStyle          String?
+  technicalDepth         String?
+  storytellingPreference String?
+  hookStyle              String?
+  formattingPreference   String?
+  emojiUsage             String?
+  ctaPreference          String?
+  opinionStrength        String?
+  firstPersonUsage       String?
+  typicalLength          String?
+  explicitPreferences    Json?
+  reviewState            MemoryReviewState @default(CANDIDATE)
+  analysisRunId          String?
+  analysisRunUserId      String?
+  analysisRun            AgentRun?         @relation(fields: [analysisRunId, analysisRunUserId], references: [id, userId], onDelete: SetNull)
+  analyzedExampleIds     Json?
+  analyzedAt             DateTime?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  @@index([reviewState, updatedAt])
+  @@index([analysisRunId])
+}
+
+model WritingStyleExample {
+  id                 String                 @id @default(cuid())
+  userId             String
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content            String
+  sourceType         StyleExampleSourceType
+  sourceRef          String?
+  includedInAnalysis Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([userId, includedInAnalysis, updatedAt])
+  @@index([userId, sourceType, sourceRef])
 }
 
 model AuditEvent {
