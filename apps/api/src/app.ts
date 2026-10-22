@@ -71,6 +71,7 @@ export function createApp() {
   });
   app.use(
     cors({
+      credentials: true,
       origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) callback(null, true);
         else {
@@ -104,33 +105,29 @@ export function createApp() {
       await prisma.$queryRaw`SELECT 1`;
       const dependencies = getRuntimeConfigStatus();
       const ready = isRuntimeReady(true);
-      response
-        .status(ready ? 200 : 503)
-        .json({
-          status: ready ? 'ready' : 'not_ready',
-          service: 'personal-brand-assistant-api',
-          dependencies: dependencies.map(({ name, configured, required, reason }) => ({
-            name,
-            configured,
-            required,
-            reason,
-          })),
-        });
+      response.status(ready ? 200 : 503).json({
+        status: ready ? 'ready' : 'not_ready',
+        service: 'personal-brand-assistant-api',
+        dependencies: dependencies.map(({ name, configured, required, reason }) => ({
+          name,
+          configured,
+          required,
+          reason,
+        })),
+      });
     } catch {
-      response
-        .status(503)
-        .json({
-          status: 'not_ready',
-          service: 'personal-brand-assistant-api',
-          dependencies: [
-            {
-              name: 'database',
-              configured: false,
-              required: true,
-              reason: 'Database readiness query failed.',
-            },
-          ],
-        });
+      response.status(503).json({
+        status: 'not_ready',
+        service: 'personal-brand-assistant-api',
+        dependencies: [
+          {
+            name: 'database',
+            configured: false,
+            required: true,
+            reason: 'Database readiness query failed.',
+          },
+        ],
+      });
     }
   });
   app.use('/api/auth', authRouter);
@@ -216,16 +213,14 @@ export function createApp() {
         requestStatus,
       ].find((candidate) => candidate !== 500) ?? 500;
     if (status >= 500) console.error(error);
-    response
-      .status(status)
-      .json({
-        error:
-          status === 500
-            ? 'Internal server error'
-            : error instanceof Error
-              ? error.message
-              : 'Invalid request',
-      });
+    response.status(status).json({
+      error:
+        status === 500
+          ? 'Internal server error'
+          : error instanceof Error
+            ? error.message
+            : 'Invalid request',
+    });
   };
   app.use(errorHandler);
   return app;

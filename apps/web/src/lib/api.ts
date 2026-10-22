@@ -14,13 +14,17 @@ export async function getHealth(): Promise<HealthResponse> {
 }
 
 export async function getUsageSummary(): Promise<UsageSummary> {
-  const response = await fetch(`${getApiBaseUrl()}/usage`, { headers: authHeaders() });
+  const response = await fetch(`${getApiBaseUrl()}/usage`, {
+    credentials: 'include',
+    headers: authHeaders(),
+  });
   if (!response.ok) throw new Error('Usage information is unavailable.');
   return usageSummarySchema.parse(await response.json());
 }
 export async function createCheckoutSession(planId: string): Promise<{ url: string }> {
   const response = await fetch(`${getApiBaseUrl()}/billing/checkout`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({
       planId,
@@ -37,6 +41,7 @@ export async function createCheckoutSession(planId: string): Promise<{ url: stri
 export async function createBillingPortal(): Promise<{ url: string }> {
   const response = await fetch(`${getApiBaseUrl()}/billing/portal`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ returnUrl: `${window.location.origin}/billing` }),
   });
