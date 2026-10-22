@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Dashboard, Placeholder } from './pages';
+import { Dashboard } from './pages';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResumePage } from './pages/ResumePage';
 import { JobsPage } from './pages/JobsPage';
@@ -14,16 +14,113 @@ import { CareerAssistantPage } from './pages/CareerAssistantPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ContentStudioPage } from './pages/ContentStudioPage';
 import { LandingPage, PricingPage, PublicPlaceholder } from './pages/PublicPages';
-import { AuthRedirect, ForgotPasswordPage, RequireSession, SignInPage, SignUpPage } from './pages/AuthPages';
+import {
+  AuthRedirect,
+  ForgotPasswordPage,
+  RequireSession,
+  SignInPage,
+  SignUpPage,
+} from './pages/AuthPages';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { BillingPage } from './pages/BillingPage';
 import { LinkedInCallbackPage, LinkedInPage } from './pages/LinkedInPage';
 import { ProfessionalIntelligencePage } from './pages/ProfessionalIntelligencePage';
 import { TopicsPage } from './pages/TopicsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import './index.css';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { theme } from './theme/theme';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
-ReactDOM.createRoot(document.getElementById('root')!).render(<ErrorBoundary><React.StrictMode><ThemeProvider theme={theme}><CssBaseline /><QueryClientProvider client={queryClient}><BrowserRouter><Routes><Route path="/" element={<LandingPage />} /><Route path="/pricing" element={<PricingPage />} /><Route path="/features" element={<PublicPlaceholder title="Features" />} /><Route path="/privacy" element={<PublicPlaceholder title="Privacy" />} /><Route path="/terms" element={<PublicPlaceholder title="Terms" />} /><Route path="/signup" element={<AuthRedirect><SignUpPage /></AuthRedirect>} /><Route path="/signin" element={<AuthRedirect><SignInPage /></AuthRedirect>} /><Route path="/forgot-password" element={<AuthRedirect><ForgotPasswordPage /></AuthRedirect>} /><Route path="/onboarding" element={<RequireSession><OnboardingPage /></RequireSession>} /><Route path="/linkedin/callback" element={<RequireSession><LinkedInCallbackPage /></RequireSession>} /><Route element={<RequireSession><Layout /></RequireSession>}><Route path="/dashboard" element={<Dashboard />} /><Route path="/profile" element={<ProfilePage />} /><Route path="/resume" element={<ResumePage />} /><Route path="/jobs" element={<JobsPage />} /><Route path="/applications" element={<ApplicationsPage />} /><Route path="/application-package" element={<ApplicationPackagePage />} /><Route path="/interview-preparation" element={<InterviewPreparationPage />} /><Route path="/career-assistant" element={<CareerAssistantPage />} /><Route path="/memory" element={<ProfessionalIntelligencePage />} /><Route path="/topics" element={<TopicsPage />} /><Route path="/analytics" element={<AnalyticsPage />} /><Route path="/content" element={<ContentStudioPage />} /><Route path="/content/ideas" element={<ContentStudioPage />} /><Route path="/content/calendar" element={<ContentStudioPage />} /><Route path="/content/drafts" element={<ContentStudioPage />} /><Route path="/content/scheduled" element={<ContentStudioPage />} /><Route path="/content/published" element={<ContentStudioPage />} /><Route path="/content/strategy" element={<ContentStudioPage />} /><Route path="/content-studio" element={<ContentStudioPage />} /><Route path="/linkedin" element={<LinkedInPage />} /><Route path="/linkedin/history" element={<LinkedInPage />} /><Route path="/billing" element={<BillingPage />} /><Route path="/settings" element={<Placeholder name="Settings" />} /></Route></Routes></BrowserRouter></QueryClientProvider></ThemeProvider></React.StrictMode></ErrorBoundary>);
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <ErrorBoundary>
+    <React.StrictMode>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/features" element={<PublicPlaceholder title="Features" />} />
+              <Route path="/privacy" element={<PublicPlaceholder title="Privacy" />} />
+              <Route path="/terms" element={<PublicPlaceholder title="Terms" />} />
+              <Route
+                path="/signup"
+                element={
+                  <AuthRedirect>
+                    <SignUpPage />
+                  </AuthRedirect>
+                }
+              />
+              <Route
+                path="/signin"
+                element={
+                  <AuthRedirect>
+                    <SignInPage />
+                  </AuthRedirect>
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <AuthRedirect>
+                    <ForgotPasswordPage />
+                  </AuthRedirect>
+                }
+              />
+              <Route
+                path="/onboarding"
+                element={
+                  <RequireSession>
+                    <OnboardingPage />
+                  </RequireSession>
+                }
+              />
+              <Route
+                path="/linkedin/callback"
+                element={
+                  <RequireSession>
+                    <LinkedInCallbackPage />
+                  </RequireSession>
+                }
+              />
+              <Route
+                element={
+                  <RequireSession>
+                    <Layout />
+                  </RequireSession>
+                }
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/resume" element={<ResumePage />} />
+                <Route path="/jobs" element={<JobsPage />} />
+                <Route path="/applications" element={<ApplicationsPage />} />
+                <Route path="/application-package" element={<ApplicationPackagePage />} />
+                <Route path="/interview-preparation" element={<InterviewPreparationPage />} />
+                <Route path="/career-assistant" element={<CareerAssistantPage />} />
+                <Route path="/memory" element={<ProfessionalIntelligencePage />} />
+                <Route path="/topics" element={<TopicsPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/content" element={<ContentStudioPage />} />
+                <Route path="/content/ideas" element={<ContentStudioPage />} />
+                <Route path="/content/calendar" element={<ContentStudioPage />} />
+                <Route path="/content/drafts" element={<ContentStudioPage />} />
+                <Route path="/content/scheduled" element={<ContentStudioPage />} />
+                <Route path="/content/published" element={<ContentStudioPage />} />
+                <Route path="/content/strategy" element={<ContentStudioPage />} />
+                <Route path="/content-studio" element={<ContentStudioPage />} />
+                <Route path="/linkedin" element={<LinkedInPage />} />
+                <Route path="/linkedin/history" element={<LinkedInPage />} />
+                <Route path="/billing" element={<BillingPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </React.StrictMode>
+  </ErrorBoundary>,
+);

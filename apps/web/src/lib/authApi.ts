@@ -1,5 +1,5 @@
 import { getApiBaseUrl } from './config';
-import { authHeaders, getToken, saveSession, type SessionUser } from './session';
+import { authHeaders, clearSession, getToken, saveSession, type SessionUser } from './session';
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
@@ -50,4 +50,12 @@ export async function completeOnboarding() {
   const token = getToken();
   if (token) saveSession({ token, user: result.user });
   return result;
+}
+export async function signout() {
+  await fetch(`${getApiBaseUrl()}/auth/signout`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: authHeaders(),
+  });
+  clearSession();
 }
