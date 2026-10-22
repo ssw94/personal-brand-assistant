@@ -21,6 +21,24 @@ export async function getUsageSummary(): Promise<UsageSummary> {
   if (!response.ok) throw new Error('Usage information is unavailable.');
   return usageSummarySchema.parse(await response.json());
 }
+export async function getBillingStatus(): Promise<{
+  customerConfigured: boolean;
+  subscription: {
+    status: string;
+    planId: string;
+    currentPeriodStart: string | null;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+    updatedAt: string;
+  } | null;
+}> {
+  const response = await fetch(`${getApiBaseUrl()}/billing/status`, {
+    credentials: 'include',
+    headers: authHeaders(),
+  });
+  if (!response.ok) throw new Error('Billing status is unavailable.');
+  return response.json();
+}
 export async function createCheckoutSession(planId: string): Promise<{ url: string }> {
   const response = await fetch(`${getApiBaseUrl()}/billing/checkout`, {
     method: 'POST',

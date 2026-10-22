@@ -1,13 +1,18 @@
 import { Link } from 'react-router-dom';
 import { planCatalog } from '@pba/shared';
 import { useQuery } from '@tanstack/react-query';
-import { getUsageSummary } from '../lib/api';
+import { getBillingStatus, getUsageSummary } from '../lib/api';
 import { createBillingPortal, createCheckoutSession } from '../lib/api';
 import { useMutation } from '@tanstack/react-query';
 import { getSessionUser } from '../lib/session';
 export function BillingPage() {
   const user = getSessionUser();
   const usage = useQuery({ queryKey: ['usage-summary'], queryFn: getUsageSummary, retry: false });
+  const billing = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: getBillingStatus,
+    retry: false,
+  });
   const plan =
     planCatalog.find((item) => item.id === (usage.data?.plan ?? user?.plan)) ?? planCatalog[0];
   const price = plan.price === null ? 'Custom' : `₹${plan.price}`;
@@ -75,11 +80,22 @@ export function BillingPage() {
           <h2 className="font-semibold">Usage and renewal</h2>
           <div className="mt-5 space-y-4 text-sm">
             <div className="flex justify-between border-b border-slate-100 pb-3">
+              <span className="text-slate-500">Subscription status</span>
+              <span className="font-medium">
+                {billing.data?.subscription?.status ?? 'Not subscribed'}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-slate-100 pb-3">
               <span className="text-slate-500">Included posting usage</span>
               <span className="font-medium">
                 {plan.monthlyPostLimit === null ? 'Custom' : `${plan.monthlyPostLimit} posts/month`}
               </span>
             </div>
+            {billing.data?.subscription?.cancelAtPeriodEnd && (
+              <p className="rounded-lg bg-amber-50 p-3 text-amber-800">
+                Cancellation is scheduled at the end of the current provider period.
+              </p>
+            )}
             <div className="flex justify-between border-b border-slate-100 pb-3">
               <span className="text-slate-500">Remaining this period</span>
               <span className="font-medium">{remaining}</span>
