@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id                   String                @id @default(cuid())
-  email                String                @unique
-  passwordHash         String                @default("")
-  plan                 String                @default("FREE")
-  onboardingCompleted  Boolean               @default(false)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  id                   String                   @id @default(cuid())
+  email                String                   @unique
+  passwordHash         String                   @default("")
+  plan                 String                   @default("FREE")
+  onboardingCompleted  Boolean                  @default(false)
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
   profile              Profile?
   resumes              Resume[]
   jobs                 Job[]
@@ -25,10 +25,10 @@ model User {
   contentPillars       ContentPillar[]
   contentIdeas         ContentIdea[]
   contentDrafts        ContentDraft[]
-  ownedAuditEvents     AuditEvent[]          @relation("AuditEventOwner")
-  actorAuditEvents     AuditEvent[]          @relation("AuditEventActor")
-  contentApprovals     ContentApproval[]     @relation("ContentApprovalOwner")
-  approvalActions      ContentApproval[]     @relation("ContentApprovalActor")
+  ownedAuditEvents     AuditEvent[]             @relation("AuditEventOwner")
+  actorAuditEvents     AuditEvent[]             @relation("AuditEventActor")
+  contentApprovals     ContentApproval[]        @relation("ContentApprovalOwner")
+  approvalActions      ContentApproval[]        @relation("ContentApprovalActor")
   idempotencyRecords   IdempotencyRecord[]
   agentRuns            AgentRun[]
   agentArtifacts       AgentArtifact[]
@@ -51,6 +51,8 @@ model User {
   publishingJobs       PublishingJob[]
   analyticsEvents      AnalyticsEvent[]
   postMetricSnapshots  PostMetricSnapshot[]
+  analyticsInsights    AnalyticsInsight[]
+  topicFeedback        TopicFeedbackCandidate[]
 }
 
 model Profile {
@@ -1126,4 +1128,42 @@ model PostMetricSnapshot {
 
   @@unique([userId, publishedPostId, metricName, observedAt])
   @@index([userId, metricName, observedAt])
+}
+
+enum InsightStatus {
+  CANDIDATE
+  ACCEPTED
+  DISMISSED
+}
+
+model AnalyticsInsight {
+  id         String                   @id @default(cuid())
+  userId     String
+  user       User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  summary    String
+  evidence   Json
+  confidence Float
+  status     InsightStatus            @default(CANDIDATE)
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+  feedback   TopicFeedbackCandidate[]
+
+  @@unique([id, userId])
+  @@unique([userId, kind, summary])
+  @@index([userId, status, createdAt])
+}
+
+model TopicFeedbackCandidate {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insightId  String
+  insight    AnalyticsInsight @relation(fields: [insightId, userId], references: [id, userId], onDelete: Cascade)
+  guidance   String
+  status     InsightStatus    @default(CANDIDATE)
+  acceptedAt DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, status, createdAt])
 }

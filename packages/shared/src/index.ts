@@ -370,3 +370,5 @@ export const scheduleRequestSchema = z.object({ draftId: idSchema, accountId: id
 export const analyticsEventInputSchema = z.object({ publishedPostId: idSchema.nullable().default(null), provider: z.string().trim().min(1).max(80), providerEventId: z.string().trim().min(1).max(240), eventType: z.string().trim().min(1).max(120), occurredAt: dateSchema, payload: z.record(z.unknown()) }).strict();
 export const metricSnapshotInputSchema = z.object({ publishedPostId: idSchema, metricName: z.string().trim().min(1).max(80), value: z.number().finite().nonnegative(), observedAt: dateSchema, provider: z.string().trim().min(1).max(80), capability: z.string().trim().min(1).max(120) }).strict();
 export type ScheduleRequest = z.infer<typeof scheduleRequestSchema>;
+export const insightStatusSchema = z.enum(['CANDIDATE', 'ACCEPTED', 'DISMISSED']);
+export const insightDecisionSchema = z.object({ decision: z.enum(['ACCEPTED', 'DISMISSED']) }).strict();
