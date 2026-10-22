@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { prisma } from './prisma.js';
+import { assertFeatureEntitled } from './usageService.js';
 
 export class LinkedInConfigurationError extends Error { constructor(message: string) { super(message); this.name = 'LinkedInConfigurationError'; } }
 export class LinkedInOAuthError extends Error { constructor(message: string) { super(message); this.name = 'LinkedInOAuthError'; } }
@@ -28,6 +29,7 @@ export async function completeLinkedInOAuth(input: { state: string; code: string
 }
 
 export async function publishApprovedDraft(userId: string, draftId: string, accountId: string) {
+  await assertFeatureEntitled(userId, 'publishing');
   const settings = config(); const draft = await prisma.contentDraft.findFirst({ where: { id: draftId, userId, status: 'APPROVED' }, include: { revisions: { orderBy: { version: 'desc' }, take: 1 } } }); if (!draft || !draft.revisions[0]) throw new LinkedInPublishError('Only an approved draft with a revision can be published.');
   const account = await prisma.linkedInAccount.findFirst({ where: { id: accountId, userId, disconnectedAt: null } }); if (!account) throw new LinkedInPublishError('LinkedIn account is not connected.');
   const token = decrypt(account.accessTokenCiphertext, settings.key); const attempt = await prisma.publishingAttempt.create({ data: { userId, draftId, revisionId: draft.revisions[0].id, status: 'STARTED' } });

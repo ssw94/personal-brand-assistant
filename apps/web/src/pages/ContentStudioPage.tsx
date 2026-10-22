@@ -15,15 +15,18 @@ import { EmptyState } from '../components/EmptyState';
 import { FormField, SelectField, TextAreaField } from '../components/FormField';
 import {
   createIdea,
+  approveDraft,
   critiqueDraft,
   generateDraft,
   getStrategy,
   listDrafts,
   listIdeas,
+  listLinkedInAccounts,
   listPillars,
   publishDraft,
   saveStrategy,
   scheduleDraft,
+  submitDraftForReview,
   transformDraft,
   updateDraft,
   type Draft,
@@ -479,17 +482,16 @@ function DraftEditor({
     },
   });
   const schedule = useMutation({
-    mutationFn: () => scheduleDraft(draft.id, new Date(scheduledAt).toISOString()),
+    mutationFn: () => { const accountId = accounts.data?.accounts[0]?.id; const revisionId = draft.revisions[0]?.id; if (!accountId || !revisionId) throw new Error('Connect LinkedIn and keep a latest revision before scheduling.'); return scheduleDraft(draft.id, new Date(scheduledAt).toISOString(), accountId, revisionId); },
     onSuccess: (result) => onChanged(result.draft),
   });
+  const accounts = useQuery({ queryKey: ['linkedin-accounts'], queryFn: listLinkedInAccounts, retry: false });
   const publish = useMutation({
-    mutationFn: () => publishDraft(draft.id),
+    mutationFn: () => { const accountId = accounts.data?.accounts[0]?.id; if (!accountId) throw new Error('Connect LinkedIn before publishing.'); return publishDraft(draft.id, accountId); },
     onSuccess: (result) => onChanged(result.draft),
   });
-  const transition = (status: string) =>
-    updateDraft(draft.id, { status })
-      .then((result) => onChanged(result.draft))
-      .catch(() => undefined);
+  const submitReview = useMutation({ mutationFn: () => submitDraftForReview(draft.id), onSuccess: () => onChanged({ ...draft, status: 'REVIEW' }) });
+  const approve = useMutation({ mutationFn: () => { const revisionId = draft.revisions[0]?.id; if (!revisionId) throw new Error('A revision is required before approval.'); return approveDraft(draft.id, revisionId); }, onSuccess: () => onChanged({ ...draft, status: 'APPROVED' }) });
   return (
     <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/30 p-4">
       <div className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
@@ -543,17 +545,17 @@ function DraftEditor({
           </button>
           <button
             type="button"
-            disabled={draft.status !== 'DRAFT'}
-            onClick={() => transition('REVIEW')}
-            className="rounded-lg border border-amber-200 px-3 py-2 text-sm text-amber-700"
+            onClick={() => submitReview.mutate()}
+            disabled={draft.status !== 'DRAFT' || submitReview.isPending}
+            className="rounded-lg border border-amber-200 px-3 py-2 text-sm text-amber-700 disabled:opacity-50"
           >
             Submit for review
           </button>
           <button
             type="button"
-            disabled={draft.status !== 'REVIEW'}
-            onClick={() => transition('APPROVED')}
-            className="rounded-lg border border-emerald-200 px-3 py-2 text-sm text-emerald-700"
+            onClick={() => approve.mutate()}
+            disabled={draft.status !== 'REVIEW' || approve.isPending}
+            className="rounded-lg border border-emerald-200 px-3 py-2 text-sm text-emerald-700 disabled:opacity-50"
           >
             Approve for Publishing
           </button>
@@ -604,7 +606,7 @@ function DraftEditor({
               </button>
             </div>
             <p className="mt-3 text-xs text-indigo-700">
-              Development mode uses the safe mock provider and never contacts LinkedIn.
+              {accounts.isPending ? 'Checking LinkedIn connection…' : accounts.data?.accounts.length ? 'Publishing uses the connected official LinkedIn account.' : 'Connect LinkedIn before scheduling or publishing.'}
             </p>
           </div>
         )}{' '}

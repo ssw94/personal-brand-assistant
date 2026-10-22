@@ -11,7 +11,10 @@ export const createIdea = (body: unknown) => request('/content/ideas', { method:
 export const listDrafts = () => request<{ drafts: Draft[] }>('/content/drafts');
 export const generateDraft = (body: unknown) => request<{ id: string }>('/content/drafts/generate', { method: 'POST', body: JSON.stringify(body) });
 export const updateDraft = (id: string, body: unknown) => request<{ draft: Draft }>(`/content/drafts/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
-export const publishDraft = (id: string) => request<{ draft: Draft }>(`/content/drafts/${id}/publish`, { method: 'POST' });
-export const scheduleDraft = (id: string, scheduledAt: string) => request<{ draft: Draft }>(`/content/drafts/${id}/schedule`, { method: 'POST', body: JSON.stringify({ scheduledAt }) });
+export const submitDraftForReview = (id: string) => request<{ draftId: string; status: string }>(`/approvals/${id}/submit`, { method: 'POST' });
+export const approveDraft = (id: string, revisionId: string, decision: 'APPROVED' | 'REJECTED' | 'REQUEST_CHANGES' = 'APPROVED') => request<{ id: string; draftId: string }>(`/approvals/${id}/decision`, { method: 'POST', body: JSON.stringify({ revisionId, decision }) });
+export const listLinkedInAccounts = () => request<{ accounts: Array<{ id: string; displayName: string | null; providerMemberId: string; scopes: string[]; connectedAt: string }> }>('/linkedin/accounts');
+export const publishDraft = (id: string, accountId: string) => request<{ result: { providerPostId: string; status: string }; draft: Draft }>(`/content/drafts/${id}/publish`, { method: 'POST', body: JSON.stringify({ accountId }) });
+export const scheduleDraft = (id: string, scheduledAt: string, accountId: string, revisionId: string) => request<{ job: { id: string; status: string }; draft: Draft }>(`/content/drafts/${id}/schedule`, { method: 'POST', body: JSON.stringify({ scheduledAt, accountId, revisionId, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, idempotencyKey: `schedule-${id}-${revisionId}-${scheduledAt}` }) });
 export const critiqueDraft = (id: string) => request<{ critique: Draft['critiques'][number] }>(`/content/drafts/${id}/critique`, { method: 'POST' });
 export const transformDraft = (id: string, action: string) => request<{ draft: Draft }>(`/content/drafts/${id}/transform`, { method: 'POST', body: JSON.stringify({ action }) });

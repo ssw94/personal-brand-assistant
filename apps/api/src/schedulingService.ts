@@ -1,11 +1,13 @@
 import { scheduleRequestSchema, type ScheduleRequest } from '@pba/shared';
 import { prisma } from './prisma.js';
 import { publishApprovedDraft } from './linkedinService.js';
+import { assertFeatureEntitled } from './usageService.js';
 
 export class SchedulingInputError extends Error { constructor(message: string) { super(message); this.name = 'SchedulingInputError'; } }
 export class SchedulingNotFoundError extends Error { constructor() { super('Scheduled publishing job not found.'); this.name = 'SchedulingNotFoundError'; } }
 
 export async function scheduleApprovedDraft(userId: string, input: unknown) {
+  await assertFeatureEntitled(userId, 'scheduling');
   const data: ScheduleRequest = scheduleRequestSchema.parse(input); const when = new Date(data.scheduledAt); if (when <= new Date()) throw new SchedulingInputError('Schedule time must be in the future.');
   const draft = await prisma.contentDraft.findFirst({ where: { id: data.draftId, userId, status: 'APPROVED' }, include: { revisions: { orderBy: { version: 'desc' }, take: 1 } } });
   if (!draft || !draft.revisions[0] || draft.revisions[0].id !== data.revisionId) throw new SchedulingInputError('Only the latest approved revision can be scheduled.');

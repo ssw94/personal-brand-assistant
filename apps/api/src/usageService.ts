@@ -3,9 +3,16 @@ import { Prisma, type UsageReservation } from '@prisma/client';
 import { prisma } from './prisma.js';
 
 export class UsageLimitExceededError extends Error { constructor() { super('The monthly posting limit has been reached.'); this.name = 'UsageLimitExceededError'; } }
+export class FeatureNotEntitledError extends Error { constructor(feature: string) { super(`The current plan does not include ${feature}.`); this.name = 'FeatureNotEntitledError'; } }
 export class UsageReservationNotFoundError extends Error { constructor() { super('Usage reservation not found.'); this.name = 'UsageReservationNotFoundError'; } }
 
 function planFor(plan: string) { return planCatalog.find(candidate => candidate.id === plan) ?? planCatalog[0]; }
+export async function assertFeatureEntitled(userId: string, feature: 'publishing' | 'scheduling') {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+  const plan = planFor(user?.plan ?? 'FREE');
+  const allowed = feature === 'publishing' ? plan.publishing !== 'Not included' : plan.scheduling !== 'Not included';
+  if (!allowed) throw new FeatureNotEntitledError(feature);
+}
 function monthBounds(now = new Date()) { const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)); return { start, end: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)) }; }
 async function getOrCreatePeriod(tx: Prisma.TransactionClient, userId: string, plan: string, now = new Date()) {
   const { start, end } = monthBounds(now);
@@ -64,4 +71,4 @@ export async function releasePosts(userId: string, reservationId: string) {
   return serialiseReservation(result);
 }
 
-export function usageErrorStatus(error: unknown) { if (error instanceof UsageReservationNotFoundError) return 404; if (error instanceof UsageLimitExceededError) return 429; return 500; }
+export function usageErrorStatus(error: unknown) { if (error instanceof UsageReservationNotFoundError) return 404; if (error instanceof UsageLimitExceededError) return 429; if (error instanceof FeatureNotEntitledError) return 403; return 500; }
