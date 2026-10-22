@@ -43,6 +43,7 @@ model User {
   usagePeriods         UsagePeriod[]
   usageReservations    UsageReservation[]
   topicCandidates      TopicCandidate[]
+  workflowRuns         WorkflowRun[]
   researchSources      ResearchSource[]
 }
 
@@ -372,6 +373,7 @@ model ContentDraft {
   critiques      ContentCritique[]
   approvals      ContentApproval[]
   agentArtifacts AgentArtifact[]
+  workflowRuns   WorkflowRun[]
 
   @@unique([id, userId])
   @@index([userId, status, updatedAt])
@@ -903,8 +905,61 @@ model TopicCandidate {
   reviewedAt        DateTime?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
+  workflowRuns      WorkflowRun[]
 
   @@unique([id, userId])
   @@index([userId, status, createdAt])
   @@index([userId, noveltyKey])
+}
+
+enum WorkflowRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WorkflowStepStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model WorkflowRun {
+  id            String            @id @default(cuid())
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId       String
+  topic         TopicCandidate    @relation(fields: [topicId, userId], references: [id, userId], onDelete: Restrict)
+  draftId       String?
+  draft         ContentDraft?     @relation(fields: [draftId, userId], references: [id, userId], onDelete: Restrict)
+  status        WorkflowRunStatus @default(QUEUED)
+  currentStep   String?
+  failureReason String?
+  createdAt     DateTime          @default(now())
+  completedAt   DateTime?
+  updatedAt     DateTime          @updatedAt
+  steps         WorkflowStep[]
+
+  @@unique([id, userId])
+  @@index([userId, status, createdAt])
+}
+
+model WorkflowStep {
+  id          String             @id @default(cuid())
+  userId      String
+  runId       String
+  run         WorkflowRun        @relation(fields: [runId, userId], references: [id, userId], onDelete: Cascade)
+  name        String
+  status      WorkflowStepStatus @default(QUEUED)
+  agentRunId  String?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime           @default(now())
+
+  @@index([userId, runId, createdAt])
 }

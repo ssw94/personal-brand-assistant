@@ -16,6 +16,8 @@ import { researchErrorStatus, researchRouter } from './researchRoutes.js';
 import { usageErrorStatus, usageRouter } from './usageRoutes.js';
 import { topicErrorStatus, topicRouter } from './topicRoutes.js';
 import { agentWorkflowErrorStatus, agentWorkflowRouter } from './agentWorkflowRoutes.js';
+import { workflowErrorStatus, workflowRouter } from './workflowRoutes.js';
+import { approvalErrorStatus, approvalRouter } from './approvalRoutes.js';
 
 export function getHealthResponse() {
   return healthResponseSchema.parse({ status: 'ok', service: 'personal-brand-assistant-api', timestamp: new Date().toISOString() });
@@ -53,6 +55,8 @@ export function createApp() {
   app.use('/api/usage', usageRouter);
   app.use('/api/topics', topicRouter);
   app.use('/api/agent-workflows', agentWorkflowRouter);
+  app.use('/api/workflows', workflowRouter);
+  app.use('/api/approvals', approvalRouter);
 
   app.use((_request, response) => response.status(404).json({ error: 'Not found' }));
   const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
@@ -71,9 +75,11 @@ export function createApp() {
     const usageStatus = usageErrorStatus(error);
     const topicStatus = topicErrorStatus(error);
     const agentWorkflowStatus = agentWorkflowErrorStatus(error);
+    const workflowStatus = workflowErrorStatus(error);
+    const approvalStatus = approvalErrorStatus(error);
     const corsStatus = error instanceof Error && error.name === 'CorsPolicyError' ? 403 : 500;
     const requestStatus = typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number' && error.status >= 400 && error.status < 500 ? error.status : 500;
-    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, interviewStatus, packageStatus, assistantStatus, contentStatus, authServiceStatus, authStatus, professionalIntelligenceStatus, researchStatus, usageStatus, topicStatus, agentWorkflowStatus, corsStatus, requestStatus].find(candidate => candidate !== 500) ?? 500;
+    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, interviewStatus, packageStatus, assistantStatus, contentStatus, authServiceStatus, authStatus, professionalIntelligenceStatus, researchStatus, usageStatus, topicStatus, agentWorkflowStatus, workflowStatus, approvalStatus, corsStatus, requestStatus].find(candidate => candidate !== 500) ?? 500;
     if (status >= 500) console.error(error);
     response.status(status).json({ error: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Invalid request' });
   };
