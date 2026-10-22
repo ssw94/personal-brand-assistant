@@ -22,6 +22,7 @@ import { linkedinErrorStatus, linkedinRouter } from './linkedinRoutes.js';
 import { schedulingErrorStatus, schedulingRouter } from './schedulingRoutes.js';
 import { analyticsErrorStatus, analyticsRouter } from './analyticsRoutes.js';
 import { analyticsIntelligenceRouter, intelligenceErrorStatus } from './analyticsIntelligenceRoutes.js';
+import { stripeErrorStatus, stripeRouter } from './stripeRoutes.js';
 
 export function getHealthResponse() {
   return healthResponseSchema.parse({ status: 'ok', service: 'personal-brand-assistant-api', timestamp: new Date().toISOString() });
@@ -35,7 +36,7 @@ export function createApp() {
   const allowedOrigins = configuredOrigins.length ? configuredOrigins : process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173'];
   app.use((request, response, next) => { response.setHeader('X-Content-Type-Options', 'nosniff'); response.setHeader('X-Frame-Options', 'DENY'); response.setHeader('Referrer-Policy', 'no-referrer'); response.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'"); if (process.env.NODE_ENV === 'production') response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains'); next(); });
   app.use(cors({ origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin)) callback(null, true); else { const error = new Error('Origin is not allowed by the API CORS policy.'); error.name = 'CorsPolicyError'; callback(error); } } }));
-  app.use(express.json({ limit: '256kb' }));
+  app.use(express.json({ limit: '256kb', verify: (request, _response, buffer) => { (request as typeof request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer); } }));
   app.use('/api', createRateLimiter(120, 60_000));
   app.use('/api/assistant', createRateLimiter(20, 60_000));
   app.use('/api/content', createRateLimiter(30, 60_000));
@@ -65,6 +66,7 @@ export function createApp() {
   app.use('/api/scheduling', schedulingRouter);
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/analytics-intelligence', analyticsIntelligenceRouter);
+  app.use('/api/billing', stripeRouter);
 
   app.use((_request, response) => response.status(404).json({ error: 'Not found' }));
   const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
@@ -89,9 +91,10 @@ export function createApp() {
     const schedulingStatus = schedulingErrorStatus(error);
     const analyticsStatus = analyticsErrorStatus(error);
     const intelligenceStatus = intelligenceErrorStatus(error);
+    const stripeStatus = stripeErrorStatus(error);
     const corsStatus = error instanceof Error && error.name === 'CorsPolicyError' ? 403 : 500;
     const requestStatus = typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number' && error.status >= 400 && error.status < 500 ? error.status : 500;
-    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, interviewStatus, packageStatus, assistantStatus, contentStatus, authServiceStatus, authStatus, professionalIntelligenceStatus, researchStatus, usageStatus, topicStatus, agentWorkflowStatus, workflowStatus, approvalStatus, linkedinStatus, schedulingStatus, analyticsStatus, intelligenceStatus, corsStatus, requestStatus].find(candidate => candidate !== 500) ?? 500;
+    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, interviewStatus, packageStatus, assistantStatus, contentStatus, authServiceStatus, authStatus, professionalIntelligenceStatus, researchStatus, usageStatus, topicStatus, agentWorkflowStatus, workflowStatus, approvalStatus, linkedinStatus, schedulingStatus, analyticsStatus, intelligenceStatus, stripeStatus, corsStatus, requestStatus].find(candidate => candidate !== 500) ?? 500;
     if (status >= 500) console.error(error);
     response.status(status).json({ error: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Invalid request' });
   };

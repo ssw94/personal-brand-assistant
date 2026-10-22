@@ -53,6 +53,9 @@ model User {
   postMetricSnapshots  PostMetricSnapshot[]
   analyticsInsights    AnalyticsInsight[]
   topicFeedback        TopicFeedbackCandidate[]
+  stripeCustomer       StripeCustomer?
+  stripeSubscriptions  StripeSubscription[]
+  stripeEvents         StripeEvent[]
 }
 
 model Profile {
@@ -1166,4 +1169,40 @@ model TopicFeedbackCandidate {
   createdAt  DateTime         @default(now())
 
   @@index([userId, status, createdAt])
+}
+
+model StripeCustomer {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerCustomerId String   @unique
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model StripeSubscription {
+  id                     String    @id @default(cuid())
+  userId                 String
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerSubscriptionId String    @unique
+  providerCustomerId     String
+  status                 String
+  planId                 String
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean   @default(false)
+  updatedAt              DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model StripeEvent {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  providerEventId String    @unique
+  eventType       String
+  payloadHash     String
+  receivedAt      DateTime  @default(now())
+  processedAt     DateTime?
 }
