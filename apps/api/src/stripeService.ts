@@ -162,6 +162,37 @@ export function verifyStripeSignature(rawBody: Buffer, signature: string, tolera
   )
     throw new StripeWebhookError('Invalid Stripe signature.');
 }
+function providerDate(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null;
+  const date = new Date(value * 1000);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function providerBoolean(value: unknown) {
+  return typeof value === 'boolean' ? value : false;
+}
+
+export function readStripeSubscriptionState(object: Record<string, unknown>) {
+  const providerSubscriptionId = typeof object.id === 'string' ? object.id : null;
+  const status = typeof object.status === 'string' ? object.status : null;
+  const metadata = object.metadata as Record<string, unknown> | undefined;
+  const planId = typeof metadata?.planId === 'string' ? metadata.planId : null;
+  if (
+    !providerSubscriptionId ||
+    !status ||
+    !planId ||
+    !planCatalog.some((plan) => plan.id === planId)
+  )
+    return null;
+  return {
+    providerSubscriptionId,
+    status,
+    planId,
+    currentPeriodStart: providerDate(object.current_period_start),
+    currentPeriodEnd: providerDate(object.current_period_end),
+    cancelAtPeriodEnd: providerBoolean(object.cancel_at_period_end),
+  };
+}
 export async function processStripeWebhook(rawBody: Buffer, signature: string) {
   verifyStripeSignature(rawBody, signature);
   let event: { id?: string; type?: string; data?: { object?: Record<string, unknown> } };
@@ -196,33 +227,37 @@ export async function processStripeWebhook(rawBody: Buffer, signature: string) {
         event.type === 'customer.subscription.updated' ||
         event.type === 'customer.subscription.deleted')
     ) {
-      const providerSubscriptionId = typeof object.id === 'string' ? object.id : null;
-      const status = typeof object.status === 'string' ? object.status : null;
-      const planId =
-        typeof (object.metadata as Record<string, unknown> | undefined)?.planId === 'string'
-          ? String((object.metadata as Record<string, unknown>).planId)
-          : null;
-      if (
-        !providerSubscriptionId ||
-        !status ||
-        !planId ||
-        !planCatalog.some((plan) => plan.id === planId)
-      )
+      const subscription = readStripeSubscriptionState(object);
+      if (!subscription)
         throw new StripeWebhookError('Stripe subscription lacks an approved plan mapping.');
       await tx.stripeSubscription.upsert({
-        where: { providerSubscriptionId },
+        where: { providerSubscriptionId: subscription.providerSubscriptionId },
         create: {
           userId: customer.userId,
-          providerSubscriptionId,
+          providerSubscriptionId: subscription.providerSubscriptionId,
           providerCustomerId: customerId!,
-          status,
-          planId,
+          status: subscription.status,
+          planId: subscription.planId,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
         },
-        update: { status, planId },
+        update: {
+          status: subscription.status,
+          planId: subscription.planId,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+          cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        },
       });
       await tx.user.update({
         where: { id: customer.userId },
-        data: { plan: status === 'active' || status === 'trialing' ? planId : 'FREE' },
+        data: {
+          plan:
+            subscription.status === 'active' || subscription.status === 'trialing'
+              ? subscription.planId
+              : 'FREE',
+        },
       });
     }
   });
