@@ -1,6 +1,6 @@
 # Personal Brand Assistant
 
-Personal Brand Assistant is a production-minded foundation for helping a software engineer manage their professional profile, resumes, job search, applications, and interview preparation.
+Personal Brand AI is an AI SaaS for software engineers and technology professionals. It combines a user-owned professional profile and memory with a reviewable, approval-gated LinkedIn content workflow.
 
 ## Stack
 
@@ -47,7 +47,7 @@ Local development accepts these identity headers only when `NODE_ENV` is not `pr
 
 The Resume Builder uses the profile as its source of truth. Resume documents store only selected profile IDs, section visibility/order, and resume-specific summary text. Draft edits autosave to the current version; “Save version” creates an immutable numbered version. PDF export can be added later without changing this model.
 
-AI Resume Optimization defaults to the credential-free `safe-mock` provider (`AI_PROVIDER=mock`). The provider contract lives in `apps/api/src/aiResumeProvider.ts`, so a vendor-backed implementation can be added later without changing the optimization API or review UI. Suggestions are never written into original resume facts automatically.
+The Personal Brand AI content pipeline uses the server-only Model Gateway and structured Responses API transport. Professional Memory remains user-owned and versioned; AI extraction creates candidates that require review. Topic, Writer, Critic, and Revision outputs are schema-validated and traceable to memory/research references.
 
 The Application Package workspace generates a concise cover letter, skill match/gap review, interview prompts, and an application checklist from a selected resume and real job description. Generated letters are saved as editable drafts; the selected resume remains unchanged. The provider contract lives in `apps/api/src/aiCoverLetterProvider.ts`. The default provider only derives statements from supplied profile/resume facts and labels gaps as items to review, never as qualifications.
 
@@ -55,9 +55,9 @@ Interview Preparation is available for tracked applications. It generates techni
 
 The AI Career Assistant is available from the Career Assistant workspace. It answers questions using the current user’s saved profile, jobs, applications, resumes, and interview preparation. Important answers include expandable evidence showing the underlying records; when a recommendation cannot be confirmed from stored data, the assistant says so. Questions and answers are persisted in `AIConversation` history.
 
-Content Studio is available from the Content Studio workspace. It stores a content strategy, idea backlog, editable drafts, revisions, critique results, and review/approval state. The default `safe-mock` content provider only uses facts already present in the profile and marks critique as critique-only material. Drafts must be reviewed and approved before future scheduling or publishing integrations can act on them.
+Content Studio is available from the Content Studio workspace. It stores a content strategy, idea backlog, editable drafts, revisions, critique results, and review/approval state. Draft generation is routed through the real server-side Writer boundary; Critic and Revision remain separate independently testable workflow boundaries. Drafts must be submitted for human review and explicitly approved before scheduling or publishing can act on them.
 
-The publishing endpoint is intentionally provider-based and credential-free in this version. `SafeMockPublishingProvider` records a successful local state transition without contacting LinkedIn or another third party; a real provider should be added only after OAuth, consent, rate limits, and the destination platform’s terms are implemented.
+LinkedIn connection and publishing use official OAuth and API boundaries only. Access tokens are encrypted server-side, OAuth state/PKCE are persisted and consumed once, and publication is successful only after LinkedIn confirms the provider post ID. No LinkedIn scraping is used. Analytics is capability-gated and never assumes metrics that the approved provider does not expose.
 
 Jobs are currently entered manually. `apps/api/src/jobSourceProvider.ts` defines the future source-provider boundary, while the default provider intentionally performs no scraping, crawling, auto-apply, or other third-party automation.
 
