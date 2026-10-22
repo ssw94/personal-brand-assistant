@@ -3,15 +3,25 @@ import express, { type ErrorRequestHandler } from 'express';
 import { healthResponseSchema } from '@pba/shared';
 import { profileErrorStatus, profileRouter } from './profileRoutes.js';
 import { resumeErrorStatus, resumeRouter } from './resumeRoutes.js';
-import { applicationErrorStatus, applicationRouter, interviewPreparationErrorStatus } from './applicationRoutes.js';
+import {
+  applicationErrorStatus,
+  applicationRouter,
+  interviewPreparationErrorStatus,
+} from './applicationRoutes.js';
 import { jobErrorStatus, jobRouter } from './jobRoutes.js';
-import { applicationPackageErrorStatus, applicationPackageRouter } from './applicationPackageRoutes.js';
+import {
+  applicationPackageErrorStatus,
+  applicationPackageRouter,
+} from './applicationPackageRoutes.js';
 import { careerAssistantErrorStatus, careerAssistantRouter } from './careerAssistantRoutes.js';
 import { authenticationErrorStatus } from './auth.js';
 import { createRateLimiter } from './rateLimit.js';
 import { contentErrorStatus, contentRouter } from './contentRoutes.js';
 import { authRouter, authServiceErrorStatus } from './authRoutes.js';
-import { professionalIntelligenceErrorStatus, professionalIntelligenceRouter } from './professionalIntelligenceRoutes.js';
+import {
+  professionalIntelligenceErrorStatus,
+  professionalIntelligenceRouter,
+} from './professionalIntelligenceRoutes.js';
 import { researchErrorStatus, researchRouter } from './researchRoutes.js';
 import { usageErrorStatus, usageRouter } from './usageRoutes.js';
 import { topicErrorStatus, topicRouter } from './topicRoutes.js';
@@ -21,23 +31,64 @@ import { approvalErrorStatus, approvalRouter } from './approvalRoutes.js';
 import { linkedinErrorStatus, linkedinRouter } from './linkedinRoutes.js';
 import { schedulingErrorStatus, schedulingRouter } from './schedulingRoutes.js';
 import { analyticsErrorStatus, analyticsRouter } from './analyticsRoutes.js';
-import { analyticsIntelligenceRouter, intelligenceErrorStatus } from './analyticsIntelligenceRoutes.js';
+import {
+  analyticsIntelligenceRouter,
+  intelligenceErrorStatus,
+} from './analyticsIntelligenceRoutes.js';
 import { stripeErrorStatus, stripeRouter } from './stripeRoutes.js';
 import { prisma } from './prisma.js';
+import { getRuntimeConfigStatus, isRuntimeReady } from './runtimeConfig.js';
 
 export function getHealthResponse() {
-  return healthResponseSchema.parse({ status: 'ok', service: 'personal-brand-assistant-api', timestamp: new Date().toISOString() });
+  return healthResponseSchema.parse({
+    status: 'ok',
+    service: 'personal-brand-assistant-api',
+    timestamp: new Date().toISOString(),
+  });
 }
 
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
   if (process.env.TRUST_PROXY === 'true') app.set('trust proxy', 1);
-  const configuredOrigins = (process.env.WEB_ORIGINS ?? process.env.WEB_ORIGIN ?? '').split(',').map(origin => origin.trim()).filter(Boolean);
-  const allowedOrigins = configuredOrigins.length ? configuredOrigins : process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173'];
-  app.use((request, response, next) => { response.setHeader('X-Content-Type-Options', 'nosniff'); response.setHeader('X-Frame-Options', 'DENY'); response.setHeader('Referrer-Policy', 'no-referrer'); response.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'"); if (process.env.NODE_ENV === 'production') response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains'); next(); });
-  app.use(cors({ origin: (origin, callback) => { if (!origin || allowedOrigins.includes(origin)) callback(null, true); else { const error = new Error('Origin is not allowed by the API CORS policy.'); error.name = 'CorsPolicyError'; callback(error); } } }));
-  app.use(express.json({ limit: '256kb', verify: (request, _response, buffer) => { (request as typeof request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer); } }));
+  const configuredOrigins = (process.env.WEB_ORIGINS ?? process.env.WEB_ORIGIN ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const allowedOrigins = configuredOrigins.length
+    ? configuredOrigins
+    : process.env.NODE_ENV === 'production'
+      ? []
+      : ['http://localhost:5173'];
+  app.use((request, response, next) => {
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader('Referrer-Policy', 'no-referrer');
+    response.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+    if (process.env.NODE_ENV === 'production')
+      response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  });
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+        else {
+          const error = new Error('Origin is not allowed by the API CORS policy.');
+          error.name = 'CorsPolicyError';
+          callback(error);
+        }
+      },
+    }),
+  );
+  app.use(
+    express.json({
+      limit: '256kb',
+      verify: (request, _response, buffer) => {
+        (request as typeof request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer);
+      },
+    }),
+  );
   app.use('/api', createRateLimiter(120, 60_000));
   app.use('/api/assistant', createRateLimiter(20, 60_000));
   app.use('/api/content', createRateLimiter(30, 60_000));
@@ -49,7 +100,38 @@ export function createApp() {
     response.json(getHealthResponse());
   });
   app.get('/api/ready', async (_request, response) => {
-    try { await prisma.$queryRaw`SELECT 1`; response.json({ status: 'ready', service: 'personal-brand-assistant-api' }); } catch { response.status(503).json({ status: 'not_ready', service: 'personal-brand-assistant-api' }); }
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      const dependencies = getRuntimeConfigStatus();
+      const ready = isRuntimeReady(true);
+      response
+        .status(ready ? 200 : 503)
+        .json({
+          status: ready ? 'ready' : 'not_ready',
+          service: 'personal-brand-assistant-api',
+          dependencies: dependencies.map(({ name, configured, required, reason }) => ({
+            name,
+            configured,
+            required,
+            reason,
+          })),
+        });
+    } catch {
+      response
+        .status(503)
+        .json({
+          status: 'not_ready',
+          service: 'personal-brand-assistant-api',
+          dependencies: [
+            {
+              name: 'database',
+              configured: false,
+              required: true,
+              reason: 'Database readiness query failed.',
+            },
+          ],
+        });
+    }
   });
   app.use('/api/auth', authRouter);
   app.use('/api/profile', profileRouter);
@@ -97,10 +179,53 @@ export function createApp() {
     const intelligenceStatus = intelligenceErrorStatus(error);
     const stripeStatus = stripeErrorStatus(error);
     const corsStatus = error instanceof Error && error.name === 'CorsPolicyError' ? 403 : 500;
-    const requestStatus = typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number' && error.status >= 400 && error.status < 500 ? error.status : 500;
-    const status = [profileStatus, resumeStatus, jobStatus, applicationStatus, interviewStatus, packageStatus, assistantStatus, contentStatus, authServiceStatus, authStatus, professionalIntelligenceStatus, researchStatus, usageStatus, topicStatus, agentWorkflowStatus, workflowStatus, approvalStatus, linkedinStatus, schedulingStatus, analyticsStatus, intelligenceStatus, stripeStatus, corsStatus, requestStatus].find(candidate => candidate !== 500) ?? 500;
+    const requestStatus =
+      typeof error === 'object' &&
+      error !== null &&
+      'status' in error &&
+      typeof error.status === 'number' &&
+      error.status >= 400 &&
+      error.status < 500
+        ? error.status
+        : 500;
+    const status =
+      [
+        profileStatus,
+        resumeStatus,
+        jobStatus,
+        applicationStatus,
+        interviewStatus,
+        packageStatus,
+        assistantStatus,
+        contentStatus,
+        authServiceStatus,
+        authStatus,
+        professionalIntelligenceStatus,
+        researchStatus,
+        usageStatus,
+        topicStatus,
+        agentWorkflowStatus,
+        workflowStatus,
+        approvalStatus,
+        linkedinStatus,
+        schedulingStatus,
+        analyticsStatus,
+        intelligenceStatus,
+        stripeStatus,
+        corsStatus,
+        requestStatus,
+      ].find((candidate) => candidate !== 500) ?? 500;
     if (status >= 500) console.error(error);
-    response.status(status).json({ error: status === 500 ? 'Internal server error' : error instanceof Error ? error.message : 'Invalid request' });
+    response
+      .status(status)
+      .json({
+        error:
+          status === 500
+            ? 'Internal server error'
+            : error instanceof Error
+              ? error.message
+              : 'Invalid request',
+      });
   };
   app.use(errorHandler);
   return app;
