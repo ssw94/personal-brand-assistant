@@ -23,6 +23,7 @@ import { schedulingErrorStatus, schedulingRouter } from './schedulingRoutes.js';
 import { analyticsErrorStatus, analyticsRouter } from './analyticsRoutes.js';
 import { analyticsIntelligenceRouter, intelligenceErrorStatus } from './analyticsIntelligenceRoutes.js';
 import { stripeErrorStatus, stripeRouter } from './stripeRoutes.js';
+import { prisma } from './prisma.js';
 
 export function getHealthResponse() {
   return healthResponseSchema.parse({ status: 'ok', service: 'personal-brand-assistant-api', timestamp: new Date().toISOString() });
@@ -46,6 +47,9 @@ export function createApp() {
 
   app.get('/api/health', (_request, response) => {
     response.json(getHealthResponse());
+  });
+  app.get('/api/ready', async (_request, response) => {
+    try { await prisma.$queryRaw`SELECT 1`; response.json({ status: 'ready', service: 'personal-brand-assistant-api' }); } catch { response.status(503).json({ status: 'not_ready', service: 'personal-brand-assistant-api' }); }
   });
   app.use('/api/auth', authRouter);
   app.use('/api/profile', profileRouter);
