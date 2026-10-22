@@ -13,17 +13,20 @@ export function getRuntimeConfigStatus(): RuntimeConfigStatus[] {
   return [
     {
       name: 'authentication',
-      configured: present('AUTH_JWT_SECRET') && process.env.AUTH_ALLOW_IDENTITY_HEADERS !== 'true',
-      required: true,
+      configured:
+        !production ||
+        (present('AUTH_JWT_SECRET') && process.env.AUTH_ALLOW_IDENTITY_HEADERS !== 'true'),
+      required: production,
       reason:
-        present('AUTH_JWT_SECRET') && process.env.AUTH_ALLOW_IDENTITY_HEADERS !== 'true'
+        !production ||
+        (present('AUTH_JWT_SECRET') && process.env.AUTH_ALLOW_IDENTITY_HEADERS !== 'true')
           ? null
           : 'Production authentication requires AUTH_JWT_SECRET and disabled identity headers.',
     },
     {
       name: 'ai',
       configured: present('OPENAI_API_KEY'),
-      required: true,
+      required: production,
       reason: present('OPENAI_API_KEY') ? null : 'OPENAI_API_KEY is not configured.',
     },
     {
@@ -59,7 +62,7 @@ export function getRuntimeConfigStatus(): RuntimeConfigStatus[] {
         ? null
         : 'Research fetches are unavailable until an approved host allowlist is configured.',
     },
-  ].map((item) => ({ ...item, required: item.required || (production && item.name === 'ai') }));
+  ];
 }
 export function isRuntimeReady(databaseReady: boolean) {
   const statuses = getRuntimeConfigStatus();
