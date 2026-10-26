@@ -1,8 +1,10 @@
-# Personal Brand AI — Repository Gap Analysis
+# Personal Brand AI — Repository Gap Analysis (historical baseline)
 
 Audit date: 2026-10-03  
 Repository: `ssw94/personal-brand-assistant`  
 Scope: read-only comparison of the current repository against the supplied Personal Brand AI Product Specification and Implementation Plan Specification, including the LinkedIn end-to-end audit brief.
+
+> This is a historical planning artifact from before the Phase 4–18 implementation work. It is retained for decision history. For the current state, use [`docs/implementation-status.md`](implementation-status.md) and [`docs/PRODUCT_FEATURE_AUDIT.md`](PRODUCT_FEATURE_AUDIT.md). Missing-domain claims below are not current acceptance criteria.
 
 ## Audit method and status meanings
 
