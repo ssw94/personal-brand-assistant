@@ -7,6 +7,7 @@ import { FormField, TextAreaField } from '../components/FormField';
 import { OptimizationPanel } from '../components/OptimizationPanel';
 import { createResume, deleteResume, duplicateResume, getResume, listResumes, autosaveResume, saveResumeVersion, type ResumeListItem } from '../lib/resumeApi';
 import type { ProfileRecord } from '../lib/profileApi';
+import { getSessionUser } from '../lib/session';
 
 const sectionLabels: Record<ResumeSectionId, string> = { summary: 'Professional summary', experience: 'Experience', education: 'Education', skills: 'Skills', projects: 'Projects', certifications: 'Certifications', achievements: 'Achievements' };
 function sectionTitle(value: ResumeSectionId) { return sectionLabels[value]; }
@@ -14,7 +15,7 @@ function sectionTitle(value: ResumeSectionId) { return sectionLabels[value]; }
 export function ResumePage() {
   const [selected, setSelected] = useState<string>(); const [creating, setCreating] = useState(false); const list = useQuery({ queryKey: ['resumes'], queryFn: listResumes, retry: false });
   useEffect(() => { if (!selected && list.data?.resumes[0]) setSelected(list.data.resumes[0].id); }, [list.data, selected]);
-  if (!import.meta.env.VITE_USER_ID) return <EmptyState title="Connect your workspace first" description="Set VITE_USER_ID to the ID of your authenticated user, then reload. Resumes are never created for an invented user."/>;
+  if (!import.meta.env.VITE_USER_ID && !getSessionUser()) return <EmptyState title="Sign in to manage resumes" description="Your authenticated workspace session is required. Resumes are never created for an invented user."/>;
   if (list.isPending) return <div aria-label="Loading resumes" className="space-y-4"><div className="h-10 w-72 animate-pulse rounded bg-slate-200"/><div className="card h-64 animate-pulse bg-slate-100"/></div>;
   if (list.isError) return <EmptyState title="Resumes could not be loaded" description={list.error.message}/>;
   if (selected) return <ResumeEditor id={selected} onBack={() => setSelected(undefined)} onChanged={() => void list.refetch()}/>;

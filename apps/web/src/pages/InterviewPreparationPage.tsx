@@ -3,13 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, MessageCircleQuestion, Save } from 'lucide-react';
 import { interviewStageSchema, type InterviewPreparationResponse, type InterviewStage } from '@pba/shared';
 import { EmptyState } from '../components/EmptyState';
+import { getSessionUser } from '../lib/session';
 import { FormField, SelectField, TextAreaField } from '../components/FormField';
 import { listApplications, type ApplicationRecord } from '../lib/applicationApi';
 import { generateInterviewPreparation, getInterviewPreparation, updateInterviewPreparation } from '../lib/interviewPreparationApi';
 
 const stages = interviewStageSchema.options;
 export function InterviewPreparationPage() {
-  if (!import.meta.env.VITE_USER_ID) return <EmptyState title="Connect your workspace first" description="Set VITE_USER_ID to the ID of your authenticated user, then reload." />;
+  if (!import.meta.env.VITE_USER_ID && !getSessionUser()) return <EmptyState title="Sign in to continue" description="Your authenticated workspace session is required." />;
   const applications = useQuery({ queryKey: ['applications', 'interview-preparation'], queryFn: () => listApplications({}), retry: false });
   const [selected, setSelected] = useState('');
   useEffect(() => { if (!selected && applications.data?.applications[0]) setSelected(applications.data.applications[0].id); }, [applications.data, selected]);

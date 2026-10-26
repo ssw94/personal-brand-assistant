@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { CheckCircle2, FileText, Sparkles } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
+import { getSessionUser } from '../lib/session';
 import { FormField, SelectField, TextAreaField } from '../components/FormField';
 import { listJobs } from '../lib/jobApi';
 import { listResumes } from '../lib/resumeApi';
@@ -9,7 +10,7 @@ import { generateApplicationPackage, updateCoverLetter } from '../lib/applicatio
 import type { ApplicationPackage } from '@pba/shared';
 
 export function ApplicationPackagePage() {
-  if (!import.meta.env.VITE_USER_ID) return <EmptyState title="Connect your workspace first" description="Set VITE_USER_ID to the ID of your authenticated user, then reload." />;
+  if (!import.meta.env.VITE_USER_ID && !getSessionUser()) return <EmptyState title="Sign in to continue" description="Your authenticated workspace session is required." />;
   const resumes = useQuery({ queryKey: ['resumes', 'package'], queryFn: listResumes, retry: false });
   const jobs = useQuery({ queryKey: ['jobs', 'package'], queryFn: () => listJobs({}), retry: false });
   const [packageValue, setPackageValue] = useState<ApplicationPackage>();

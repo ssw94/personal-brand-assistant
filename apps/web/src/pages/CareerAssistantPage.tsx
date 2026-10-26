@@ -3,11 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bot, Clock3, Send } from 'lucide-react';
 import type { AssistantConversation, AssistantMessage } from '@pba/shared';
 import { EmptyState } from '../components/EmptyState';
+import { getSessionUser } from '../lib/session';
 import { askCareerAssistant, getAssistantConversation, listAssistantConversations } from '../lib/careerAssistantApi';
 
 const suggestions = ['Which applications need follow-up?', 'Which jobs are aligned with my profile?', 'What skills repeatedly appear in my target jobs?', 'Which applications are currently active?'];
 export function CareerAssistantPage() {
-  if (!import.meta.env.VITE_USER_ID) return <EmptyState title="Connect your workspace first" description="Set VITE_USER_ID to the ID of your authenticated user, then reload." />;
+  if (!import.meta.env.VITE_USER_ID && !getSessionUser()) return <EmptyState title="Sign in to continue" description="Your authenticated workspace session is required." />;
   const client = useQueryClient(); const history = useQuery({ queryKey: ['assistant-conversations'], queryFn: listAssistantConversations, retry: false }); const [conversation, setConversation] = useState<AssistantConversation>(); const [question, setQuestion] = useState('');
   const ask = useMutation({ mutationFn: () => askCareerAssistant({ question, conversationId: conversation?.id ?? null }), onSuccess: result => { setConversation(result.conversation); setQuestion(''); void client.invalidateQueries({ queryKey: ['assistant-conversations'] }); } });
   const open = async (id: string) => { const result = await getAssistantConversation(id); setConversation(result.conversation); };

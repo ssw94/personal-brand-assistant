@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import { applicationStatusSchema, type ApplicationCreateInput, type ApplicationStatus } from '@pba/shared';
 import { EmptyState } from '../components/EmptyState';
+import { getSessionUser } from '../lib/session';
 import { FormField, SelectField, TextAreaField } from '../components/FormField';
 import { listJobs } from '../lib/jobApi';
 import { createApplication, listApplications, updateApplication, type ApplicationRecord } from '../lib/applicationApi';
@@ -10,7 +11,7 @@ import { listResumes } from '../lib/resumeApi';
 
 const statuses = applicationStatusSchema.options;
 export function ApplicationsPage() {
-  if (!import.meta.env.VITE_USER_ID) return <EmptyState title="Connect your workspace first" description="Set VITE_USER_ID to the ID of your authenticated user, then reload." />;
+  if (!import.meta.env.VITE_USER_ID && !getSessionUser()) return <EmptyState title="Sign in to continue" description="Your authenticated workspace session is required." />;
   const client = useQueryClient(); const [search, setSearch] = useState(''); const [status, setStatus] = useState(''); const [showForm, setShowForm] = useState(false);
   const apps = useQuery({ queryKey: ['applications', { search, status }], queryFn: () => listApplications({ search, status }), retry: false });
   const jobs = useQuery({ queryKey: ['jobs', 'application-options'], queryFn: () => listJobs({}), retry: false, enabled: showForm });
